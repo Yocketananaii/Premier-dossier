@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Premier Dossier — Analyse de vidéos YouTube</title>
+<link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header>
+    <h1>📼 Premier Dossier</h1>
+    <p class="subtitle">Collez une URL YouTube : obtenez un résumé structuré, les points clés, et une vérification des faits annoncés.</p>
+  </header>
+
+  <main>
+    <form id="analyze-form">
+      <input
+        type="text"
+        id="url-input"
+        placeholder="https://www.youtube.com/watch?v=..."
+        autocomplete="off"
+        required
+      />
+      <button type="submit" id="submit-btn">Analyser</button>
+    </form>
+
+    <div id="status" class="status hidden"></div>
+
+    <section id="result" class="hidden">
+      <div class="result-header">
+        <img id="thumb" src="" alt="" />
+        <div>
+          <h2 id="result-title"></h2>
+          <p id="result-meta" class="muted"></p>
+        </div>
+      </div>
+
+      <div class="export-buttons">
+        <button id="export-pdf">⬇ Télécharger le PDF</button>
+        <button id="export-text">⬇ Télécharger en texte</button>
+      </div>
+
+      <article id="content"></article>
+    </section>
+  </main>
+
+  <footer>
+    <p>Les vérifications de faits sont générées par une IA à partir de ses connaissances générales, sans recherche web en temps réel. Vérifiez les points importants auprès de sources fiables.</p>
+  </footer>
+
+  <script src="/script.js"></script>
+</body>
+</html>
