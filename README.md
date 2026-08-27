@@ -6,15 +6,15 @@ Application web qui extrait la transcription complète d'une vidéo YouTube, la 
 
 1. Vous collez l'URL d'une vidéo YouTube.
 2. Le serveur récupère les sous-titres (automatiques ou manuels) de la vidéo, ainsi que son titre et sa chaîne.
-3. La transcription est envoyée à l'API Claude (Anthropic), qui produit :
+3. La transcription est envoyée à l'API Claude (Anthropic), qui **effectue des recherches web en temps réel** (outil `web_search`) pour vérifier chaque affirmation factuelle repérée dans la vidéo, puis produit :
    - un résumé et les points clés ;
    - le contenu réorganisé par thème ;
-   - une liste des affirmations factuelles avec un verdict (vrai / faux / partiellement vrai / invérifiable / opinion) et une explication ;
+   - une liste des affirmations factuelles avec un verdict (vrai / faux / partiellement vrai / invérifiable / opinion), une explication et les **sources web** consultées ;
    - un commentaire global sur la fiabilité et la véracité de la vidéo ;
    - un rappel honnête des limites de l'analyse.
-4. Vous pouvez télécharger le dossier en PDF ou en `.txt`.
+4. Vous pouvez télécharger le dossier en PDF ou en `.txt` (sources incluses).
 
-⚠️ **Important** : le fact-checking s'appuie sur les connaissances générales du modèle d'IA, **sans recherche web en temps réel**. Il peut donc être incomplet, dépassé (au-delà de sa date de connaissance) ou se tromper sur des sujets très pointus ou très récents. Considérez-le comme une première vérification, pas comme une source définitive — croisez les points importants avec des sources fiables.
+⚠️ **Important** : même avec une recherche web réelle, le fact-checking automatique peut se tromper (sources contradictoires, contenu difficile à trouver en ligne, nuances mal interprétées). Considérez-le comme une aide sérieuse à la vérification, pas comme une source définitive — les sources citées vous permettent de recouper vous-même les points importants.
 
 ## Prérequis
 

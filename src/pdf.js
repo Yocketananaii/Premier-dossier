@@ -111,6 +111,13 @@ function generatePdf({ meta, analysis, truncated }, stream) {
       doc.font("Helvetica").fontSize(10.5).fillColor(COLORS.text).text(item.commentaire || "", {
         align: "justify",
       });
+      if (Array.isArray(item.sources) && item.sources.length > 0) {
+        doc
+          .font("Helvetica-Oblique")
+          .fontSize(9)
+          .fillColor(COLORS.muted)
+          .text(`Sources : ${item.sources.join("  •  ")}`, { align: "justify" });
+      }
       doc.moveDown(0.5);
     });
   }
@@ -126,7 +133,7 @@ function generatePdf({ meta, analysis, truncated }, stream) {
     .fillColor(COLORS.muted)
     .text(
       analysis.limitesAnalyse ||
-        "Cette analyse a été générée automatiquement par une IA, sur la base de ses connaissances générales, sans recherche web en temps réel. Elle peut contenir des erreurs ou des approximations et ne remplace pas une vérification humaine approfondie.",
+        "Cette analyse a été générée automatiquement par une IA, à l'aide de recherches web en temps réel pour vérifier les affirmations factuelles. Elle peut néanmoins contenir des erreurs ou des approximations et ne remplace pas une vérification humaine approfondie.",
       { align: "justify" }
     );
 

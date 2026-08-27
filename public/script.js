@@ -104,6 +104,19 @@ function renderResult({ meta, analysis, truncated }) {
       claim.appendChild(wrap);
       claim.appendChild(el("div", { className: "claim-text", text: item.citation }));
       claim.appendChild(el("p", { text: item.commentaire || "" }));
+      if (Array.isArray(item.sources) && item.sources.length > 0) {
+        const sourcesEl = el("p", { className: "sources" });
+        sourcesEl.appendChild(el("span", { text: "Sources : " }));
+        item.sources.forEach((url, i) => {
+          if (i > 0) sourcesEl.appendChild(document.createTextNode("  •  "));
+          const link = el("a", { text: url });
+          link.href = url;
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+          sourcesEl.appendChild(link);
+        });
+        claim.appendChild(sourcesEl);
+      }
       list.appendChild(claim);
     });
     section.appendChild(list);

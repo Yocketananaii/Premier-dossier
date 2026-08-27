@@ -146,6 +146,14 @@ article { display: flex; flex-direction: column; gap: 1.6rem; }
 .verdict.neutre { background: rgba(154,160,192,0.15); color: var(--neutre); }
 .confiance { color: var(--muted); font-size: 0.8rem; margin-left: 0.4rem; }
 
+.sources {
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-top: 0.4rem;
+  word-break: break-word;
+}
+.sources a { color: var(--accent); }
+
 footer {
   text-align: center;
   color: var(--muted);

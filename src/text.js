@@ -68,6 +68,9 @@ function generateText({ meta, analysis, truncated }) {
         `   Verdict : ${item.verdict}${item.confiance ? ` (confiance : ${item.confiance})` : ""}`
       );
       lines.push(`   ${item.commentaire || ""}`);
+      if (Array.isArray(item.sources) && item.sources.length > 0) {
+        lines.push(`   Sources : ${item.sources.join(" | ")}`);
+      }
       lines.push("");
     });
   }
@@ -83,7 +86,7 @@ function generateText({ meta, analysis, truncated }) {
   lines.push(subsep);
   lines.push(
     analysis.limitesAnalyse ||
-      "Cette analyse a été générée automatiquement par une IA, sans recherche web en temps réel."
+      "Cette analyse a été générée automatiquement par une IA, à l'aide de recherches web en temps réel pour vérifier les affirmations factuelles."
   );
   lines.push("");
 
