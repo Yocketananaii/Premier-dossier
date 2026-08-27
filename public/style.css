@@ -23,7 +23,8 @@ body {
 
 header {
   text-align: center;
-  padding: 2.5rem 1rem 1rem;
+  /* padding-top inclut la zone de sécurité (encoche/Dynamic Island en mode standalone iOS) */
+  padding: calc(2.5rem + env(safe-area-inset-top)) 1rem 1rem;
   position: relative;
 }
 
@@ -32,7 +33,7 @@ header h1 { margin: 0 0 0.4rem; font-size: 1.9rem; }
 
 .icon-btn {
   position: absolute;
-  top: 1rem;
+  top: calc(1rem + env(safe-area-inset-top));
   right: 1rem;
   background: var(--panel);
   border: 1px solid var(--border);
@@ -191,7 +192,7 @@ footer {
   text-align: center;
   color: var(--muted);
   font-size: 0.8rem;
-  padding: 1.5rem 1rem 2.5rem;
+  padding: 1.5rem 1rem calc(2.5rem + env(safe-area-inset-bottom));
   max-width: 700px;
   margin: 0 auto;
 }

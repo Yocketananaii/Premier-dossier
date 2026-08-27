@@ -34,7 +34,9 @@ function chunk(type, data) {
 }
 
 // dessine l'icône dans un buffer RGBA (accent bleu + triangle "lecture" blanc arrondi)
-function drawIcon(size) {
+// opaque=true : remplit tout le carré jusqu'aux bords (requis par iOS, qui ignore
+// la transparence des apple-touch-icon et la remplace par du noir).
+function drawIcon(size, { opaque = false } = {}) {
   const px = new Uint8Array(size * size * 4);
   const bg = [30, 34, 63]; // fond sombre proche de --bg de l'app
   const accent = [108, 140, 255]; // --accent
@@ -52,8 +54,8 @@ function drawIcon(size) {
       let color = bg;
       let alpha = 255;
 
-      if (dist > radius) {
-        alpha = 0; // transparent hors du cercle (icône adaptable/maskable)
+      if (!opaque && dist > radius) {
+        alpha = 0; // transparent hors du cercle (icône adaptable/maskable Android)
       } else {
         // triangle "play" centré, pointant vers la droite
         const triSize = size * 0.32;
@@ -72,8 +74,8 @@ function drawIcon(size) {
   return px;
 }
 
-function encodePng(size) {
-  const px = drawIcon(size);
+function encodePng(size, options) {
+  const px = drawIcon(size, options);
   const raw = Buffer.alloc(size * (1 + size * 4));
   for (let y = 0; y < size; y++) {
     const rowStart = y * (1 + size * 4);
@@ -109,6 +111,15 @@ fs.mkdirSync(outDir, { recursive: true });
 for (const size of [192, 512]) {
   const buf = encodePng(size);
   const file = path.join(outDir, `icon-${size}.png`);
+  fs.writeFileSync(file, buf);
+  console.log(`Généré ${file} (${buf.length} octets)`);
+}
+
+// Icône dédiée iOS : opaque et remplie jusqu'aux bords (180x180, taille recommandée
+// par Apple pour apple-touch-icon sur les iPhone récents).
+{
+  const buf = encodePng(180, { opaque: true });
+  const file = path.join(outDir, "apple-touch-icon.png");
   fs.writeFileSync(file, buf);
   console.log(`Généré ${file} (${buf.length} octets)`);
 }

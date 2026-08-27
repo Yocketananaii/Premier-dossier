@@ -1,6 +1,6 @@
 # Premier Dossier
 
-Application web (installable comme app sur Android) qui extrait la transcription complète d'une vidéo YouTube, la réorganise en un dossier structuré (résumé, points clés, plan thématique) et **vérifie la véracité des affirmations factuelles** énoncées via de vraies recherches web, avec un commentaire global sur la fiabilité du contenu. Le résultat est exportable en **PDF** ou en **texte brut**.
+Application web (installable comme app sur **Android et iOS**) qui extrait la transcription complète d'une vidéo YouTube, la réorganise en un dossier structuré (résumé, points clés, plan thématique) et **vérifie la véracité des affirmations factuelles** énoncées via de vraies recherches web, avec un commentaire global sur la fiabilité du contenu. Le résultat est exportable en **PDF** ou en **texte brut**.
 
 ## Fonctionnement et architecture
 
@@ -33,6 +33,18 @@ L'application est une **Progressive Web App** : pas besoin de Play Store ni de f
 
 L'app fonctionne aussi installée sur ordinateur (Chrome/Edge : icône d'installation dans la barre d'adresse).
 
+## Installer l'application sur iPhone / iPad (Safari)
+
+Même application, même serveur — pas de build ni de fichier séparé pour iOS.
+
+1. Ouvrez l'URL de l'application dans **Safari** (obligatoire : sur iOS, seul Safari peut ajouter une PWA à l'écran d'accueil avec un affichage plein écran — Chrome ou Firefox pour iOS ne le proposent pas, même si le reste du navigateur fonctionne).
+2. Touchez le bouton **Partager** (le carré avec la flèche vers le haut), en bas de l'écran.
+3. Choisissez **« Sur l'écran d'accueil »**, puis **« Ajouter »**.
+4. Une icône « Dossier » apparaît sur l'écran d'accueil et lance l'app en plein écran, sans barre d'adresse.
+5. Ouvrez les **Paramètres (⚙️)** dans l'app et collez votre clé API Anthropic.
+
+⚠️ Particularité iOS : Safari peut occasionnellement vider le stockage local d'une app peu utilisée (au bout de plusieurs semaines d'inactivité), ce qui effacerait la clé API enregistrée. Si l'app la redemande après une longue pause, c'est normal — il suffit de la recoller.
+
 ### Déploiement
 
 Le serveur Node doit tourner quelque part joignable en HTTPS (obligatoire pour qu'un navigateur autorise l'installation en PWA et l'appel à l'API Anthropic). N'importe quel hébergeur Node convient (Render, Railway, Fly.io, un VPS avec Nginx + certificat TLS, etc.) : il suffit de builder puis lancer `npm start` — aucune variable d'environnement secrète n'est nécessaire côté serveur, puisque les clés API restent sur l'appareil de chaque utilisateur.
@@ -62,6 +74,7 @@ L'application est accessible sur http://localhost:3000. Ouvrez les Paramètres (
 - Les vidéos très longues (plusieurs heures) peuvent voir leur transcription tronquée avant l'analyse afin de rester dans la limite de contexte du modèle ; un avertissement est alors affiché.
 - Les vidéos privées, en accès restreint ou supprimées ne peuvent pas être traitées.
 - L'appel à Claude se fait directement depuis le navigateur : sur un appareil partagé ou public, pensez à supprimer votre clé API dans les Paramètres après usage.
+- Sur iOS, l'installation en écran d'accueil plein écran n'est possible que depuis Safari (pas depuis Chrome/Firefox iOS). Le stockage de la clé API peut être effacé par Safari après une longue période d'inactivité (voir ci-dessus).
 
 ## Structure du projet
 
