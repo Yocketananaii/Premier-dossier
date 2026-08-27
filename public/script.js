@@ -12,6 +12,9 @@ const MAX_TRANSCRIPT_CHARS = 350000; // marge de sécurité sous la fenêtre de 
 const MAX_WEB_SEARCHES = 10;
 const MAX_PAUSE_CONTINUATIONS = 6;
 
+const GEMINI_KEY_HINT = "Par défaut, l'app utilise une clé Gemini déjà configurée : tu n'as rien à faire. Renseigne ta propre clé uniquement si tu préfères utiliser ton propre quota Gemini (stockée uniquement sur cet appareil).";
+const CLAUDE_KEY_HINT = "Stockée uniquement sur cet appareil, jamais envoyée ailleurs qu'à Anthropic.";
+
 const form = document.getElementById("analyze-form");
 const urlInput = document.getElementById("url-input");
 const langSelect = document.getElementById("lang-select");
@@ -32,6 +35,7 @@ const settingsModal = document.getElementById("settings-modal");
 const providerSelect = document.getElementById("provider-select");
 const apiKeyLabel = document.getElementById("api-key-label");
 const apiKeyInput = document.getElementById("api-key-input");
+const apiKeyHint = document.getElementById("api-key-hint");
 const helpGemini = document.getElementById("help-gemini");
 const helpClaude = document.getElementById("help-claude");
 const saveKeyBtn = document.getElementById("save-key-btn");
@@ -41,6 +45,9 @@ const closeSettingsBtn = document.getElementById("close-settings-btn");
 let lastPayload = null;
 
 // ---------- Fournisseur + clé API (stockés uniquement sur cet appareil) ----------
+// Gemini n'exige pas de clé personnelle : à défaut, l'app utilise une clé
+// partagée côté serveur (voir server.js /api/analyze). Claude exige toujours
+// une clé personnelle, appelée directement depuis le navigateur.
 
 function getProvider() {
   try {
@@ -81,15 +88,20 @@ function setApiKey(provider, key) {
   refreshKeyBanner();
 }
 
+function needsPersonalKey(provider = getProvider()) {
+  // Seul Claude exige une clé personnelle ; Gemini a une clé partagée par défaut.
+  return provider === "claude" && !getApiKey(provider);
+}
+
 function refreshKeyBanner() {
-  const hasKey = Boolean(getApiKey());
-  keyBanner.classList.toggle("hidden", hasKey);
+  keyBanner.classList.toggle("hidden", !needsPersonalKey());
 }
 
 function updateProviderUI(provider) {
   const isClaude = provider === "claude";
-  apiKeyLabel.textContent = isClaude ? "Clé API Anthropic" : "Clé API Gemini";
-  apiKeyInput.placeholder = isClaude ? "sk-ant-..." : "AIza...";
+  apiKeyLabel.textContent = isClaude ? "Clé API Anthropic" : "Clé API Gemini (optionnelle)";
+  apiKeyInput.placeholder = isClaude ? "sk-ant-..." : "Laisser vide pour utiliser la clé gratuite fournie";
+  apiKeyHint.textContent = isClaude ? CLAUDE_KEY_HINT : GEMINI_KEY_HINT;
   helpGemini.classList.toggle("hidden", isClaude);
   helpClaude.classList.toggle("hidden", !isClaude);
 }
@@ -200,70 +212,8 @@ function formatDuration(seconds, labels) {
 }
 
 // ---------- Appel direct à l'API (Gemini ou Claude) depuis le navigateur ----------
-
-function buildSystemPrompt(lang) {
-  const langInfo = window.getI18n(lang);
-  const today = new Date().toLocaleDateString("fr-FR", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-
-  return `Tu es un analyste rigoureux chargé de traiter la transcription d'une vidéo YouTube. Nous sommes le ${today}.
-
-Tu disposes d'un outil de recherche web. Utilise-le systématiquement pour vérifier chaque affirmation factuelle vérifiable présente dans la transcription (chiffres, dates, citations, événements, études, déclarations attribuées à quelqu'un, etc.) avant de rendre ton verdict. Fais autant de recherches distinctes que nécessaire, en croisant si possible plusieurs sources fiables. N'utilise PAS uniquement tes connaissances internes pour les affirmations vérifiables : cherche sur le web pour confirmer ou infirmer, en particulier si les faits sont récents, chiffrés, ou controversés.
-
-Une fois toutes les recherches terminées, ta toute dernière réponse doit être UNIQUEMENT un objet JSON valide (aucun texte avant ou après, pas de balises markdown), respectant exactement ce schéma :
-
-{
-  "titreSynthetique": string,
-  "resume": string,
-  "pointsCles": [string, ...],
-  "plan": [ { "titre": string, "contenu": string } ],
-  "affirmations": [
-    {
-      "citation": string,
-      "verdict": "true" | "false" | "partially_true" | "unverifiable" | "opinion",
-      "commentaire": string,
-      "confiance": "high" | "medium" | "low",
-      "sources": [string, ...]
-    }
-  ],
-  "commentaireFiabilite": string,
-  "limitesAnalyse": string
-}
-
-Consignes :
-- Rédige tout le contenu textuel libre (titreSynthetique, resume, pointsCles, plan, citation, commentaire, commentaireFiabilite, limitesAnalyse) en ${langInfo.name}, quelle que soit la langue de la vidéo d'origine.
-- IMPORTANT : les valeurs des champs "verdict" et "confiance" doivent rester EXACTEMENT les tokens anglais indiqués ci-dessus ("true", "false", "partially_true", "unverifiable", "opinion", "high", "medium", "low"), sans les traduire ni les modifier — c'est un format technique interne, pas du texte affiché.
-- Vérifie les affirmations factuelles par une recherche web réelle plutôt que par déduction ; cite les sources (URLs) qui t'ont permis de conclure.
-- Si la recherche ne permet pas de trancher, utilise le verdict "unverifiable" avec une confiance "low" plutôt que d'inventer une certitude.
-- Distingue clairement les faits vérifiables des opinions ou jugements de valeur (verdict "opinion").
-- Sois factuel, neutre et évite tout jugement sur les personnes ; concentre-toi sur les affirmations.
-- N'invente jamais de contenu qui ne figure pas dans la transcription fournie.
-- Ne renvoie le JSON final qu'une fois toutes les recherches utiles effectuées ; ne mélange pas commentaires de recherche et JSON dans le même message.`;
-}
-
-function buildUserPrompt({ title, author, fullText, truncated }) {
-  return `Titre de la vidéo : ${title}
-Chaîne : ${author}
-${truncated ? "\n(Note : la transcription a été tronquée car elle est très longue ; l'analyse porte sur la première partie disponible.)\n" : ""}
-
-Transcription complète de la vidéo :
-"""
-${fullText}
-"""`;
-}
-
-function extractJson(text) {
-  const trimmed = text.trim();
-  const start = trimmed.indexOf("{");
-  const end = trimmed.lastIndexOf("}");
-  if (start === -1 || end === -1) {
-    throw new Error("La réponse de l'IA ne contient pas de JSON exploitable.");
-  }
-  return JSON.parse(trimmed.slice(start, end + 1));
-}
+// buildSystemPrompt / buildUserPrompt / extractJson viennent de promptBuilder.js
+// (partagé avec le serveur, voir src/promptBuilder.js).
 
 // ----- Claude (Anthropic) -----
 
@@ -318,7 +268,7 @@ async function runClaude(apiKey, systemPrompt, userPrompt) {
   return { text: textBlocks[textBlocks.length - 1].text, noSearchFallback: false };
 }
 
-// ----- Gemini (Google) -----
+// ----- Gemini (Google), avec une clé personnelle -----
 
 async function requestGemini(apiKey, systemPrompt, userPrompt, withSearch) {
   const payload = {
@@ -370,12 +320,30 @@ async function runGemini(apiKey, systemPrompt, userPrompt) {
 
 // ----- Orchestration -----
 
+async function analyzeWithSharedGemini({ title, author, fullText, lang }) {
+  const res = await fetch("/api/analyze", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ title, author, fullText, lang }),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || `Erreur du service d'analyse (HTTP ${res.status}).`);
+  }
+  return data; // { analysis, truncated }
+}
+
 async function analyzeTranscript({ provider, apiKey, title, author, fullText, lang }) {
+  // Gemini sans clé personnelle : l'app utilise la clé partagée côté serveur.
+  if (provider === "gemini" && !apiKey) {
+    return analyzeWithSharedGemini({ title, author, fullText, lang });
+  }
+
   const truncated = fullText.length > MAX_TRANSCRIPT_CHARS;
   const text = truncated ? fullText.slice(0, MAX_TRANSCRIPT_CHARS) : fullText;
 
-  const systemPrompt = buildSystemPrompt(lang);
-  const userPrompt = buildUserPrompt({ title, author, fullText: text, truncated });
+  const systemPrompt = window.buildSystemPrompt(lang);
+  const userPrompt = window.buildUserPrompt({ title, author, fullText: text, truncated });
 
   const { text: rawText, noSearchFallback } =
     provider === "claude"
@@ -384,7 +352,7 @@ async function analyzeTranscript({ provider, apiKey, title, author, fullText, la
 
   let analysis;
   try {
-    analysis = extractJson(rawText);
+    analysis = window.extractJson(rawText);
   } catch (err) {
     throw new Error("Impossible d'interpréter la réponse de l'IA : " + err.message);
   }
@@ -524,12 +492,12 @@ form.addEventListener("submit", async (e) => {
   const lang = window.SUPPORTED_LANGS.includes(langSelect.value) ? langSelect.value : "fr";
   const provider = getProvider();
 
-  const apiKey = getApiKey(provider);
-  if (!apiKey) {
-    setStatus("Ajoute d'abord ta clé API dans les paramètres (⚙️).", true);
+  if (needsPersonalKey(provider)) {
+    setStatus("Ajoute d'abord ta clé API Claude dans les paramètres (⚙️), ou choisis Google Gemini.", true);
     openSettings();
     return;
   }
+  const apiKey = getApiKey(provider);
 
   submitBtn.disabled = true;
   resultEl.classList.add("hidden");
@@ -596,7 +564,7 @@ function extractYouTubeUrlFromText(text) {
 
   urlInput.value = shared;
 
-  if (getApiKey()) {
+  if (!needsPersonalKey()) {
     setStatus("Vidéo reçue, lancement de l'analyse…");
     form.requestSubmit();
   } else {

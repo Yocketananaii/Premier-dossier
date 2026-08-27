@@ -25,7 +25,7 @@
 
   <main>
     <div id="key-banner" class="key-banner hidden">
-      ⚠️ Aucune clé API enregistrée. <button id="key-banner-btn" class="link-btn">En ajouter une</button> pour pouvoir analyser une vidéo.
+      ⚠️ Aucune clé API Claude enregistrée. <button id="key-banner-btn" class="link-btn">En ajouter une</button> pour pouvoir analyser une vidéo, ou choisis Google Gemini (gratuit, sans clé requise) dans les Paramètres.
     </div>
 
     <form id="analyze-form">
@@ -79,16 +79,19 @@
 
       <label for="provider-select">Fournisseur IA</label>
       <select id="provider-select">
-        <option value="gemini">Google Gemini — gratuit, sans carte bancaire</option>
+        <option value="gemini">Google Gemini — gratuit, aucune clé requise</option>
         <option value="claude">Anthropic Claude — payant, qualité supérieure</option>
       </select>
 
-      <label for="api-key-input" id="api-key-label">Clé API Gemini</label>
-      <input type="password" id="api-key-input" placeholder="AIza..." autocomplete="off" spellcheck="false" />
-      <p class="muted small">Stockée uniquement sur cet appareil, jamais envoyée ailleurs qu'au fournisseur choisi.</p>
+      <label for="api-key-input" id="api-key-label">Clé API Gemini (optionnelle)</label>
+      <input type="password" id="api-key-input" placeholder="Laisser vide pour utiliser la clé gratuite fournie" autocomplete="off" spellcheck="false" />
+      <p class="muted small" id="api-key-hint">
+        Par défaut, l'app utilise une clé Gemini déjà configurée : tu n'as rien à faire. Renseigne ta propre clé
+        uniquement si tu préfères utiliser ton propre quota Gemini (stockée uniquement sur cet appareil).
+      </p>
 
       <details class="help-details" id="help-gemini">
-        <summary>Je n'ai pas encore de clé Gemini — comment en obtenir une ?</summary>
+        <summary>Je préfère utiliser ma propre clé Gemini — comment en obtenir une ?</summary>
         <ol class="help-steps">
           <li>Va sur <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">aistudio.google.com/apikey</a> et connecte-toi avec un compte Google (100 % gratuit, aucune carte bancaire requise).</li>
           <li>Touche <strong>Create API key</strong>, choisis un projet (ou laisse celui proposé par défaut).</li>
@@ -116,6 +119,7 @@
   </div>
 
   <script src="/i18n.js"></script>
+  <script src="/promptBuilder.js"></script>
   <script src="/script.js"></script>
 </body>
 </html>

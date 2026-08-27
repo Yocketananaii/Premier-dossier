@@ -1,9 +1,10 @@
-const CACHE_NAME = "premier-dossier-v4";
+const CACHE_NAME = "premier-dossier-v5";
 const APP_SHELL = [
   "/",
   "/index.html",
   "/style.css",
   "/i18n.js",
+  "/promptBuilder.js",
   "/script.js",
   "/manifest.json",
   "/icons/icon-192.png",
