@@ -36,15 +36,17 @@
         autocomplete="off"
         required
       />
-      <select id="lang-select" title="Langue du dossier" aria-label="Langue du dossier">
-        <option value="fr">🇫🇷 Français</option>
-        <option value="en">🇬🇧 English</option>
-        <option value="es">🇪🇸 Español</option>
-        <option value="de">🇩🇪 Deutsch</option>
-        <option value="it">🇮🇹 Italiano</option>
-        <option value="pt">🇵🇹 Português</option>
-      </select>
-      <button type="submit" id="submit-btn">Analyser</button>
+      <div class="form-row">
+        <select id="lang-select" title="Langue du dossier" aria-label="Langue du dossier">
+          <option value="fr">🇫🇷 Français</option>
+          <option value="en">🇬🇧 English</option>
+          <option value="es">🇪🇸 Español</option>
+          <option value="de">🇩🇪 Deutsch</option>
+          <option value="it">🇮🇹 Italiano</option>
+          <option value="pt">🇵🇹 Português</option>
+        </select>
+        <button type="submit" id="submit-btn">Analyser</button>
+      </div>
     </form>
 
     <div id="status" class="status hidden"></div>
@@ -74,13 +76,20 @@
   <div id="settings-modal" class="modal hidden">
     <div class="modal-content">
       <h3>Paramètres</h3>
-      <p class="muted">
-        Ta clé API Anthropic est stockée uniquement sur cet appareil (dans le navigateur) et n'est jamais envoyée à un
-        serveur autre que celui d'Anthropic. Obtiens une clé sur
-        <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer">console.anthropic.com</a>.
-      </p>
       <label for="api-key-input">Clé API Anthropic</label>
       <input type="password" id="api-key-input" placeholder="sk-ant-..." autocomplete="off" spellcheck="false" />
+      <p class="muted small">Stockée uniquement sur cet appareil, jamais envoyée ailleurs qu'à Anthropic.</p>
+
+      <details class="help-details">
+        <summary>Je n'ai pas encore de clé — comment en obtenir une ?</summary>
+        <ol class="help-steps">
+          <li>Va sur <a href="https://console.anthropic.com" target="_blank" rel="noopener noreferrer">console.anthropic.com</a> et crée un compte (avec Google ou ton adresse e-mail).</li>
+          <li>Dans le menu <strong>Billing</strong>, ajoute quelques dollars de crédit (5 $ suffisent pour de nombreuses analyses).</li>
+          <li>Dans le menu <strong>API Keys</strong>, touche <strong>Create Key</strong>, donne-lui un nom, puis copie la clé affichée (elle commence par <code>sk-ant-...</code>) — elle ne sera montrée qu'une seule fois.</li>
+          <li>Reviens ici, colle-la dans le champ ci-dessus, puis touche <strong>Enregistrer</strong>.</li>
+        </ol>
+      </details>
+
       <div class="modal-actions">
         <button id="save-key-btn">Enregistrer</button>
         <button id="clear-key-btn" class="secondary">Supprimer</button>

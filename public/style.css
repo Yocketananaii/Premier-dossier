@@ -71,12 +71,18 @@ main {
 
 #analyze-form {
   display: flex;
+  flex-direction: column;
   gap: 0.6rem;
-  flex-wrap: wrap;
+}
+
+.form-row {
+  display: flex;
+  gap: 0.6rem;
+  min-width: 0;
 }
 
 #url-input {
-  flex: 1 1 320px;
+  width: 100%;
   padding: 0.8rem 1rem;
   border-radius: 8px;
   border: 1px solid var(--border);
@@ -86,13 +92,19 @@ main {
 }
 
 #lang-select {
-  flex: 0 0 auto;
+  flex: 1 1 0%;
+  min-width: 0;
+  max-width: 100%;
   padding: 0.8rem 0.7rem;
   border-radius: 8px;
   border: 1px solid var(--border);
   background: var(--panel);
   color: var(--text);
   font-size: 0.95rem;
+}
+
+.form-row #submit-btn {
+  flex: 0 0 auto;
 }
 
 button {
@@ -252,4 +264,33 @@ footer {
   background: transparent;
   color: var(--text);
   border: 1px solid var(--border);
+}
+
+.muted.small { font-size: 0.78rem; margin-top: 0.4rem; }
+
+.help-details {
+  margin-top: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.7rem 0.9rem;
+}
+.help-details summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+.help-steps {
+  margin: 0.8rem 0 0.2rem;
+  padding-left: 1.2rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.help-steps strong { color: var(--text); }
+.help-steps code {
+  background: var(--bg);
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
+  font-size: 0.82rem;
 }
