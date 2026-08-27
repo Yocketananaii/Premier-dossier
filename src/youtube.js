@@ -51,12 +51,47 @@ async function fetchMetadata(videoId) {
 // (endpoint get_transcript), contrairement aux libs plus anciennes qui ne
 // lisent que les pistes de sous-titres classiques ("captionTracks") — ce
 // qui les fait échouer sur des vidéos où seul ce nouveau panneau existe.
+//
+// generate_session_locally n'est PAS utilisé ici volontairement : une session
+// confirmée par les serveurs YouTube (comportement par défaut) est plus fiable
+// pour get_transcript, qui peut renvoyer une erreur "Precondition check failed"
+// (bug connu et documenté de youtubei.js, cf. issue LuanRT/YouTube.js #1102)
+// avec une session générée uniquement en local.
 let clientPromise = null;
 function getClient() {
   if (!clientPromise) {
-    clientPromise = Innertube.create({ generate_session_locally: true });
+    clientPromise = Innertube.create();
   }
   return clientPromise;
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// L'erreur "Precondition check failed" (FAILED_PRECONDITION) sur get_transcript
+// est intermittente côté YouTube : elle disparaît souvent après une ou deux
+// nouvelles tentatives (comportement constaté par plusieurs utilisateurs de
+// youtubei.js). On réessaie donc automatiquement avant d'abandonner.
+const TRANSCRIPT_RETRY_DELAYS_MS = [500, 1500];
+
+async function getTranscriptWithRetry(info) {
+  let lastErr;
+  for (let attempt = 0; attempt <= TRANSCRIPT_RETRY_DELAYS_MS.length; attempt++) {
+    try {
+      return await info.getTranscript();
+    } catch (err) {
+      lastErr = err;
+      const isPrecondition = /precondition|400/i.test(err?.message || "");
+      if (!isPrecondition || attempt === TRANSCRIPT_RETRY_DELAYS_MS.length) break;
+      console.error(
+        `[youtube] get_transcript a échoué (tentative ${attempt + 1}/${TRANSCRIPT_RETRY_DELAYS_MS.length + 1}), nouvel essai dans ${TRANSCRIPT_RETRY_DELAYS_MS[attempt]}ms :`,
+        err?.message
+      );
+      await sleep(TRANSCRIPT_RETRY_DELAYS_MS[attempt]);
+    }
+  }
+  throw lastErr;
 }
 
 async function fetchTranscript(videoId, lang) {
@@ -72,7 +107,7 @@ async function fetchTranscript(videoId, lang) {
 
   let transcriptInfo;
   try {
-    transcriptInfo = await info.getTranscript();
+    transcriptInfo = await getTranscriptWithRetry(info);
   } catch (err) {
     console.error("Erreur de récupération de la transcription :", err);
     throw new Error("Cette vidéo n'a pas de sous-titres disponibles (ni automatiques, ni manuels).");
