@@ -144,6 +144,28 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
 .result-header h2 { margin: 0 0 0.3rem; }
 .muted { color: var(--muted); font-size: 0.9rem; margin: 0; }
 
+#manual-transcript {
+  margin-top: 1.5rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.2rem 1.4rem;
+}
+#manual-transcript .result-header img { width: 90px; }
+#manual-transcript p.muted:not(:first-of-type) { margin: 0.8rem 0; }
+#manual-transcript-input {
+  width: 100%;
+  margin-top: 0.6rem;
+  padding: 0.8rem 0.9rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.95rem;
+  font-family: inherit;
+  resize: vertical;
+}
+
 .export-buttons {
   display: flex;
   gap: 0.6rem;

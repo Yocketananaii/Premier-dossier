@@ -127,7 +127,7 @@ L'application est accessible sur http://localhost:3000. Si `GEMINI_API_KEY` est 
 
 ## Limites connues
 
-- La vidéo doit avoir des sous-titres disponibles sur YouTube (automatiques ou ajoutés manuellement) ; sans sous-titres, la transcription ne peut pas être récupérée.
+- La vidéo doit avoir des sous-titres disponibles sur YouTube (automatiques ou ajoutés manuellement). YouTube bloque parfois la récupération automatique (mesures anti-robot) même quand des sous-titres existent réellement ; dans ce cas, l'app propose de coller manuellement la transcription (copiée depuis le bouton « Afficher la transcription » sur YouTube) plutôt que d'échouer complètement.
 - Les vidéos très longues (plusieurs heures) peuvent voir leur transcription tronquée avant l'analyse afin de rester dans la limite de contexte du modèle ; un avertissement est alors affiché.
 - Les vidéos privées, en accès restreint ou supprimées ne peuvent pas être traitées.
 - La route qui utilise la clé Gemini partagée est limitée à 30 analyses/heure/IP ; au-delà, elle demande de patienter ou d'utiliser sa propre clé (voir « Configurer la clé Gemini partagée »). Une clé personnelle renseignée dans les Paramètres est appelée directement depuis le navigateur : sur un appareil partagé ou public, pensez à la supprimer après usage.

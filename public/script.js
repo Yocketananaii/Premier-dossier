@@ -28,6 +28,14 @@ const metaEl = document.getElementById("result-meta");
 const exportPdfBtn = document.getElementById("export-pdf");
 const exportTextBtn = document.getElementById("export-text");
 
+const manualSection = document.getElementById("manual-transcript");
+const manualThumb = document.getElementById("manual-thumb");
+const manualTitle = document.getElementById("manual-title");
+const manualError = document.getElementById("manual-error");
+const manualInput = document.getElementById("manual-transcript-input");
+const manualSubmitBtn = document.getElementById("manual-transcript-submit");
+const manualCancelBtn = document.getElementById("manual-transcript-cancel");
+
 const keyBanner = document.getElementById("key-banner");
 const keyBannerBtn = document.getElementById("key-banner-btn");
 const settingsBtn = document.getElementById("settings-btn");
@@ -43,6 +51,7 @@ const clearKeyBtn = document.getElementById("clear-key-btn");
 const closeSettingsBtn = document.getElementById("close-settings-btn");
 
 let lastPayload = null;
+let pendingManualMeta = null; // { meta, lang } en attente d'une transcription collée manuellement
 
 // ---------- Fournisseur + clé API (stockés uniquement sur cet appareil) ----------
 // Gemini n'exige pas de clé personnelle : à défaut, l'app utilise une clé
@@ -367,11 +376,16 @@ async function analyzeTranscript({ provider, apiKey, title, author, fullText, la
 
 // ---------- Rendu du résultat ----------
 
+function setThumbnail(imgEl, meta) {
+  imgEl.classList.toggle("hidden", !meta.thumbnailUrl);
+  imgEl.src = meta.thumbnailUrl || "";
+  imgEl.alt = meta.title || "";
+}
+
 function renderResult({ meta, analysis, truncated, lang }) {
   const labels = window.getI18n(lang).labels;
 
-  thumbEl.src = meta.thumbnailUrl || "";
-  thumbEl.alt = meta.title;
+  setThumbnail(thumbEl, meta);
   titleEl.textContent = analysis.titreSynthetique || meta.title;
   metaEl.textContent = `${meta.author} • ${formatDuration(meta.durationSeconds, labels)}${
     truncated ? ` • ${labels.truncatedNote}` : ""
@@ -485,6 +499,30 @@ async function downloadFile(endpoint, filenameFallback) {
 
 // ---------- Soumission du formulaire ----------
 
+async function analyzeAndRender({ provider, apiKey, meta, fullText, lang }) {
+  setStatus("Analyse et vérification des faits en cours (recherche web)… cela peut prendre une minute.");
+  const { analysis, truncated } = await analyzeTranscript({
+    provider,
+    apiKey,
+    title: meta.title,
+    author: meta.author,
+    fullText,
+    lang,
+  });
+  lastPayload = { meta, analysis, truncated, lang };
+  renderResult(lastPayload);
+  setStatus(null);
+}
+
+function showManualTranscriptFallback(meta, transcriptError, lang) {
+  pendingManualMeta = { meta, lang };
+  setThumbnail(manualThumb, meta);
+  manualTitle.textContent = meta.title;
+  manualError.textContent = transcriptError || "";
+  manualInput.value = "";
+  manualSection.classList.remove("hidden");
+}
+
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
   const url = urlInput.value.trim();
@@ -501,6 +539,7 @@ form.addEventListener("submit", async (e) => {
 
   submitBtn.disabled = true;
   resultEl.classList.add("hidden");
+  manualSection.classList.add("hidden");
   setStatus("Récupération de la transcription…");
 
   try {
@@ -514,25 +553,54 @@ form.addEventListener("submit", async (e) => {
       throw new Error(transcriptData.error || "Impossible de récupérer la transcription.");
     }
 
-    setStatus("Analyse et vérification des faits en cours (recherche web)… cela peut prendre une minute.");
+    if (!transcriptData.fullText) {
+      showManualTranscriptFallback(transcriptData.meta, transcriptData.transcriptError, lang);
+      setStatus(null);
+      return;
+    }
 
-    const { analysis, truncated } = await analyzeTranscript({
-      provider,
-      apiKey,
-      title: transcriptData.meta.title,
-      author: transcriptData.meta.author,
-      fullText: transcriptData.fullText,
-      lang,
-    });
-
-    lastPayload = { meta: transcriptData.meta, analysis, truncated, lang };
-    renderResult(lastPayload);
-    setStatus(null);
+    await analyzeAndRender({ provider, apiKey, meta: transcriptData.meta, fullText: transcriptData.fullText, lang });
   } catch (err) {
     setStatus(err.message, true);
   } finally {
     submitBtn.disabled = false;
   }
+});
+
+manualSubmitBtn.addEventListener("click", async () => {
+  const text = manualInput.value.trim();
+  if (!text || !pendingManualMeta) return;
+  const provider = getProvider();
+
+  if (needsPersonalKey(provider)) {
+    setStatus("Ajoute d'abord ta clé API Claude dans les paramètres (⚙️), ou choisis Google Gemini.", true);
+    openSettings();
+    return;
+  }
+  const apiKey = getApiKey(provider);
+
+  manualSubmitBtn.disabled = true;
+  try {
+    await analyzeAndRender({
+      provider,
+      apiKey,
+      meta: pendingManualMeta.meta,
+      fullText: text,
+      lang: pendingManualMeta.lang,
+    });
+    manualSection.classList.add("hidden");
+    pendingManualMeta = null;
+  } catch (err) {
+    setStatus(err.message, true);
+  } finally {
+    manualSubmitBtn.disabled = false;
+  }
+});
+
+manualCancelBtn.addEventListener("click", () => {
+  manualSection.classList.add("hidden");
+  pendingManualMeta = null;
+  setStatus(null);
 });
 
 exportPdfBtn.addEventListener("click", () => downloadFile("/api/export/pdf", "dossier.pdf"));

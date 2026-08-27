@@ -49,23 +49,29 @@ app.post("/api/transcript", async (req, res) => {
     });
   }
 
+  let meta;
   try {
-    const [meta, transcript] = await Promise.all([
-      fetchMetadata(videoId),
-      fetchTranscript(videoId, lang),
-    ]);
-
-    const fullMeta = {
-      ...meta,
-      videoId,
-      url: `https://www.youtube.com/watch?v=${videoId}`,
-      durationSeconds: transcript.durationSeconds,
-    };
-
-    res.json({ meta: fullMeta, fullText: transcript.fullText });
+    meta = await fetchMetadata(videoId);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: err.message || "Une erreur inattendue est survenue." });
+    return res.status(500).json({ error: err.message || "Une erreur inattendue est survenue." });
+  }
+
+  const fullMeta = { ...meta, videoId, url: `https://www.youtube.com/watch?v=${videoId}` };
+
+  try {
+    const transcript = await fetchTranscript(videoId, lang);
+    res.json({
+      meta: { ...fullMeta, durationSeconds: transcript.durationSeconds },
+      fullText: transcript.fullText,
+    });
+  } catch (err) {
+    console.error(err);
+    // La récupération automatique de la transcription a échoué, mais les
+    // métadonnées (titre, chaîne, miniature) sont bien là : on les renvoie
+    // quand même pour permettre à l'utilisateur de coller la transcription
+    // manuellement côté client plutôt que de tout perdre.
+    res.json({ meta: fullMeta, fullText: null, transcriptError: err.message || "Impossible de récupérer la transcription." });
   }
 });
 

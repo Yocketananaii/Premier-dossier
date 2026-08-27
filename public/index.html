@@ -51,6 +51,30 @@
 
     <div id="status" class="status hidden"></div>
 
+    <section id="manual-transcript" class="hidden">
+      <div class="result-header">
+        <img id="manual-thumb" src="" alt="" />
+        <div>
+          <h2 id="manual-title"></h2>
+          <p id="manual-error" class="muted"></p>
+        </div>
+      </div>
+      <p class="muted">
+        La récupération automatique a échoué pour cette vidéo (ça arrive, YouTube bloque parfois ces requêtes). Tu peux
+        coller la transcription toi-même :
+      </p>
+      <ol class="help-steps">
+        <li>Ouvre la vidéo sur YouTube, touche <strong>...</strong> sous la vidéo, puis <strong>Afficher la transcription</strong>.</li>
+        <li>Dans le panneau qui s'ouvre, sélectionne tout le texte et copie-le (appui long → Tout sélectionner → Copier).</li>
+        <li>Colle-le dans le champ ci-dessous.</li>
+      </ol>
+      <textarea id="manual-transcript-input" rows="8" placeholder="Colle ici le texte de la transcription…"></textarea>
+      <div class="modal-actions">
+        <button id="manual-transcript-submit">Analyser avec ce texte</button>
+        <button id="manual-transcript-cancel" class="secondary">Annuler</button>
+      </div>
+    </section>
+
     <section id="result" class="hidden">
       <div class="result-header">
         <img id="thumb" src="" alt="" />
