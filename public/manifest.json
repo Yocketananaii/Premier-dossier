@@ -1,6 +1,6 @@
 {
-  "name": "Premier Dossier",
-  "short_name": "Dossier",
+  "name": "Extracto",
+  "short_name": "Extracto",
   "description": "Extrait, résume et vérifie les faits d'une vidéo YouTube.",
   "start_url": "/",
   "scope": "/",
@@ -33,5 +33,14 @@
       "type": "image/png",
       "purpose": "maskable"
     }
-  ]
+  ],
+  "share_target": {
+    "action": "/",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  }
 }

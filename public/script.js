@@ -449,3 +449,38 @@ form.addEventListener("submit", async (e) => {
 
 exportPdfBtn.addEventListener("click", () => downloadFile("/api/export/pdf", "dossier.pdf"));
 exportTextBtn.addEventListener("click", () => downloadFile("/api/export/text", "dossier.txt"));
+
+// ---------- Réception d'un lien partagé depuis une autre app (WhatsApp, YouTube...) ----------
+// Fonctionne quand l'app est installée sur Android via Chrome (Web Share Target).
+// Non pris en charge sur iOS/Safari : voir README.
+
+function extractYouTubeUrlFromText(text) {
+  if (!text) return null;
+  const match = text.match(/https?:\/\/\S*(?:youtube\.com|youtu\.be)\S*/i);
+  return match ? match[0] : null;
+}
+
+(function handleSharedLink() {
+  const params = new URLSearchParams(window.location.search);
+  if (![...params.keys()].length) return;
+
+  const shared =
+    extractYouTubeUrlFromText(params.get("url")) ||
+    extractYouTubeUrlFromText(params.get("text")) ||
+    extractYouTubeUrlFromText(params.get("title"));
+
+  // Nettoie l'URL de la barre d'adresse pour ne pas rejouer le partage au rechargement.
+  window.history.replaceState({}, document.title, window.location.pathname);
+
+  if (!shared) return;
+
+  urlInput.value = shared;
+
+  if (getApiKey()) {
+    setStatus("Vidéo reçue, lancement de l'analyse…");
+    form.requestSubmit();
+  } else {
+    setStatus("Vidéo reçue ! Ajoute ta clé API (⚙️) pour lancer l'analyse.", true);
+    openSettings();
+  }
+})();

@@ -33,16 +33,43 @@ function chunk(type, data) {
   return Buffer.concat([lenBuf, typeBuf, data, crcBuf]);
 }
 
-// dessine l'icône dans un buffer RGBA (accent bleu + triangle "lecture" blanc arrondi)
+// Icône "Extracto" : un entonnoir qui extrait une goutte (évoque l'extraction
+// de l'essentiel d'une vidéo), dessiné en 2x puis sous-échantillonné pour
+// lisser les bords (anti-aliasing simple par moyenne de blocs 2x2).
 // opaque=true : remplit tout le carré jusqu'aux bords (requis par iOS, qui ignore
 // la transparence des apple-touch-icon et la remplace par du noir).
-function drawIcon(size, { opaque = false } = {}) {
+function isInFunnel(relX, relY) {
+  const bowlTop = -0.5;
+  const bowlBottom = 0.02;
+  const spoutBottom = 0.34;
+  const bowlTopHalfWidth = 0.62;
+  const spoutHalfWidth = 0.11;
+
+  if (relY >= bowlTop && relY <= bowlBottom) {
+    const t = (relY - bowlTop) / (bowlBottom - bowlTop);
+    const halfWidth = bowlTopHalfWidth + (spoutHalfWidth - bowlTopHalfWidth) * t;
+    return Math.abs(relX) <= halfWidth;
+  }
+  if (relY > bowlBottom && relY <= spoutBottom) {
+    return Math.abs(relX) <= spoutHalfWidth;
+  }
+  return false;
+}
+
+function isInDroplet(relX, relY) {
+  const dx = relX;
+  const dy = relY - 0.5;
+  return dx * dx + dy * dy <= 0.1 * 0.1;
+}
+
+function drawIconAt(size, { opaque = false } = {}) {
   const px = new Uint8Array(size * size * 4);
   const bg = [30, 34, 63]; // fond sombre proche de --bg de l'app
   const accent = [108, 140, 255]; // --accent
   const cx = size / 2;
   const cy = size / 2;
-  const radius = size * 0.46;
+  const outerRadius = size * 0.46;
+  const half = size / 2;
 
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
@@ -51,19 +78,15 @@ function drawIcon(size, { opaque = false } = {}) {
       const dy = y - cy;
       const dist = Math.sqrt(dx * dx + dy * dy);
 
-      let color = bg;
       let alpha = 255;
-
-      if (!opaque && dist > radius) {
+      if (!opaque && dist > outerRadius) {
         alpha = 0; // transparent hors du cercle (icône adaptable/maskable Android)
-      } else {
-        // triangle "play" centré, pointant vers la droite
-        const triSize = size * 0.32;
-        const relX = (x - cx) / triSize;
-        const relY = (y - cy) / triSize;
-        const inTriangle = relX >= -0.5 && relX <= 0.75 && Math.abs(relY) <= (0.75 - relX) * 0.85;
-        color = inTriangle ? accent : bg;
       }
+
+      const relX = dx / (half * 0.92);
+      const relY = dy / (half * 0.92);
+      const isShape = isInFunnel(relX, relY) || isInDroplet(relX, relY);
+      const color = isShape ? accent : bg;
 
       px[idx] = color[0];
       px[idx + 1] = color[1];
@@ -72,6 +95,39 @@ function drawIcon(size, { opaque = false } = {}) {
     }
   }
   return px;
+}
+
+// sous-échantillonne un buffer RGBA (factor x factor) -> lissage des bords
+function downsample(px, sourceSize, factor) {
+  const targetSize = sourceSize / factor;
+  const out = new Uint8Array(targetSize * targetSize * 4);
+  for (let y = 0; y < targetSize; y++) {
+    for (let x = 0; x < targetSize; x++) {
+      let r = 0, g = 0, b = 0, a = 0;
+      for (let sy = 0; sy < factor; sy++) {
+        for (let sx = 0; sx < factor; sx++) {
+          const srcIdx = ((y * factor + sy) * sourceSize + (x * factor + sx)) * 4;
+          r += px[srcIdx];
+          g += px[srcIdx + 1];
+          b += px[srcIdx + 2];
+          a += px[srcIdx + 3];
+        }
+      }
+      const n = factor * factor;
+      const dstIdx = (y * targetSize + x) * 4;
+      out[dstIdx] = Math.round(r / n);
+      out[dstIdx + 1] = Math.round(g / n);
+      out[dstIdx + 2] = Math.round(b / n);
+      out[dstIdx + 3] = Math.round(a / n);
+    }
+  }
+  return out;
+}
+
+function drawIcon(size, options) {
+  const SUPERSAMPLE = 4;
+  const big = drawIconAt(size * SUPERSAMPLE, options);
+  return downsample(big, size * SUPERSAMPLE, SUPERSAMPLE);
 }
 
 function encodePng(size, options) {
