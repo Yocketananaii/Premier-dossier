@@ -44,14 +44,14 @@ app.post("/api/transcript", async (req, res) => {
 });
 
 app.post("/api/export/pdf", (req, res) => {
-  const { meta, analysis, truncated } = req.body || {};
+  const { meta, analysis, truncated, lang } = req.body || {};
   if (!meta || !analysis) {
     return res.status(400).json({ error: "Données d'analyse manquantes." });
   }
   res.setHeader("Content-Type", "application/pdf");
   res.setHeader("Content-Disposition", `attachment; filename="dossier-${meta.videoId || "video"}.pdf"`);
   try {
-    generatePdf({ meta, analysis, truncated }, res);
+    generatePdf({ meta, analysis, truncated, lang }, res);
   } catch (err) {
     console.error(err);
     res.status(500).end();
@@ -59,11 +59,11 @@ app.post("/api/export/pdf", (req, res) => {
 });
 
 app.post("/api/export/text", (req, res) => {
-  const { meta, analysis, truncated } = req.body || {};
+  const { meta, analysis, truncated, lang } = req.body || {};
   if (!meta || !analysis) {
     return res.status(400).json({ error: "Données d'analyse manquantes." });
   }
-  const text = generateText({ meta, analysis, truncated });
+  const text = generateText({ meta, analysis, truncated, lang });
   res.setHeader("Content-Type", "text/plain; charset=utf-8");
   res.setHeader("Content-Disposition", `attachment; filename="dossier-${meta.videoId || "video"}.txt"`);
   res.send(text);

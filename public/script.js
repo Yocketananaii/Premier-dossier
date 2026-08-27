@@ -1,4 +1,5 @@
 const API_KEY_STORAGE = "premierDossier.anthropicApiKey";
+const LANG_STORAGE = "premierDossier.lang";
 const CLAUDE_MODEL = "claude-sonnet-5";
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 const MAX_TRANSCRIPT_CHARS = 350000; // marge de sécurité sous la fenêtre de contexte
@@ -7,6 +8,7 @@ const MAX_PAUSE_CONTINUATIONS = 6;
 
 const form = document.getElementById("analyze-form");
 const urlInput = document.getElementById("url-input");
+const langSelect = document.getElementById("lang-select");
 const submitBtn = document.getElementById("submit-btn");
 const statusEl = document.getElementById("status");
 const resultEl = document.getElementById("result");
@@ -78,6 +80,27 @@ clearKeyBtn.addEventListener("click", () => {
 
 refreshKeyBanner();
 
+// ---------- Langue du dossier (mémorisée sur cet appareil) ----------
+
+function getSavedLang() {
+  try {
+    return localStorage.getItem(LANG_STORAGE) || "fr";
+  } catch {
+    return "fr";
+  }
+}
+
+if (window.SUPPORTED_LANGS && window.SUPPORTED_LANGS.includes(getSavedLang())) {
+  langSelect.value = getSavedLang();
+}
+langSelect.addEventListener("change", () => {
+  try {
+    localStorage.setItem(LANG_STORAGE, langSelect.value);
+  } catch {
+    // pas grave si on ne peut pas mémoriser la préférence
+  }
+});
+
 // ---------- Service worker (installation PWA) ----------
 
 if ("serviceWorker" in navigator) {
@@ -109,24 +132,27 @@ function el(tag, opts = {}) {
 
 function verdictClass(verdict) {
   const v = (verdict || "").toLowerCase();
-  if (v === "vrai") return "vrai";
-  if (v === "faux") return "faux";
-  if (v.includes("partiel")) return "partiel";
+  if (v === "true") return "vrai";
+  if (v === "false") return "faux";
+  if (v === "partially_true") return "partiel";
   return "neutre";
 }
 
-function formatDuration(seconds) {
-  if (!seconds) return "durée inconnue";
+function formatDuration(seconds, labels) {
+  if (!seconds) return labels.unknownDuration;
   const totalSec = Math.round(seconds / 1000);
   const h = Math.floor(totalSec / 3600);
   const m = Math.floor((totalSec % 3600) / 60);
   const s = totalSec % 60;
-  return h > 0 ? `${h}h ${String(m).padStart(2, "0")}min` : `${m}min ${String(s).padStart(2, "0")}s`;
+  const mm = String(m).padStart(2, "0");
+  const ss = String(s).padStart(2, "0");
+  return h > 0 ? `${h}:${mm}:${ss}` : `${m}:${ss}`;
 }
 
 // ---------- Appel direct à l'API Claude depuis le navigateur ----------
 
-function buildSystemPrompt() {
+function buildSystemPrompt(lang) {
+  const langInfo = window.getI18n(lang);
   const today = new Date().toLocaleDateString("fr-FR", {
     year: "numeric",
     month: "long",
@@ -147,9 +173,9 @@ Une fois toutes les recherches terminées, ta toute dernière réponse doit êtr
   "affirmations": [
     {
       "citation": string,
-      "verdict": "vrai" | "faux" | "partiellement vrai" | "invérifiable" | "opinion",
+      "verdict": "true" | "false" | "partially_true" | "unverifiable" | "opinion",
       "commentaire": string,
-      "confiance": "haute" | "moyenne" | "faible",
+      "confiance": "high" | "medium" | "low",
       "sources": [string, ...]
     }
   ],
@@ -158,9 +184,10 @@ Une fois toutes les recherches terminées, ta toute dernière réponse doit êtr
 }
 
 Consignes :
-- Réponds en français.
+- Rédige tout le contenu textuel libre (titreSynthetique, resume, pointsCles, plan, citation, commentaire, commentaireFiabilite, limitesAnalyse) en ${langInfo.name}, quelle que soit la langue de la vidéo d'origine.
+- IMPORTANT : les valeurs des champs "verdict" et "confiance" doivent rester EXACTEMENT les tokens anglais indiqués ci-dessus ("true", "false", "partially_true", "unverifiable", "opinion", "high", "medium", "low"), sans les traduire ni les modifier — c'est un format technique interne, pas du texte affiché.
 - Vérifie les affirmations factuelles par une recherche web réelle plutôt que par déduction ; cite les sources (URLs) qui t'ont permis de conclure.
-- Si la recherche ne permet pas de trancher, indique "invérifiable" et "confiance: faible" plutôt que d'inventer une certitude.
+- Si la recherche ne permet pas de trancher, utilise le verdict "unverifiable" avec une confiance "low" plutôt que d'inventer une certitude.
 - Distingue clairement les faits vérifiables des opinions ou jugements de valeur (verdict "opinion").
 - Sois factuel, neutre et évite tout jugement sur les personnes ; concentre-toi sur les affirmations.
 - N'invente jamais de contenu qui ne figure pas dans la transcription fournie.
@@ -188,7 +215,7 @@ function extractJson(text) {
   return JSON.parse(trimmed.slice(start, end + 1));
 }
 
-async function callClaude(apiKey, messages) {
+async function callClaude(apiKey, messages, lang) {
   const res = await fetch(ANTHROPIC_API_URL, {
     method: "POST",
     headers: {
@@ -200,7 +227,7 @@ async function callClaude(apiKey, messages) {
     body: JSON.stringify({
       model: CLAUDE_MODEL,
       max_tokens: 8000,
-      system: buildSystemPrompt(),
+      system: buildSystemPrompt(lang),
       tools: [{ type: "web_search_20260209", name: "web_search", max_uses: MAX_WEB_SEARCHES }],
       messages,
     }),
@@ -217,7 +244,7 @@ async function callClaude(apiKey, messages) {
   return data;
 }
 
-async function analyzeTranscript({ apiKey, title, author, fullText }) {
+async function analyzeTranscript({ apiKey, title, author, fullText, lang }) {
   const truncated = fullText.length > MAX_TRANSCRIPT_CHARS;
   const text = truncated ? fullText.slice(0, MAX_TRANSCRIPT_CHARS) : fullText;
 
@@ -226,7 +253,7 @@ async function analyzeTranscript({ apiKey, title, author, fullText }) {
   let response;
   let continuations = 0;
   do {
-    response = await callClaude(apiKey, messages);
+    response = await callClaude(apiKey, messages, lang);
     if (response.stop_reason === "pause_turn") {
       messages.push({ role: "assistant", content: response.content });
       messages.push({ role: "user", content: "Continue." });
@@ -254,24 +281,26 @@ async function analyzeTranscript({ apiKey, title, author, fullText }) {
 
 // ---------- Rendu du résultat ----------
 
-function renderResult({ meta, analysis, truncated }) {
+function renderResult({ meta, analysis, truncated, lang }) {
+  const labels = window.getI18n(lang).labels;
+
   thumbEl.src = meta.thumbnailUrl || "";
   thumbEl.alt = meta.title;
   titleEl.textContent = analysis.titreSynthetique || meta.title;
-  metaEl.textContent = `${meta.author} • ${formatDuration(meta.durationSeconds)}${
-    truncated ? " • transcription tronquée (vidéo très longue)" : ""
+  metaEl.textContent = `${meta.author} • ${formatDuration(meta.durationSeconds, labels)}${
+    truncated ? ` • ${labels.truncatedNote}` : ""
   }`;
 
   contentEl.innerHTML = "";
 
   const summarySection = el("div", { className: "section" });
-  summarySection.appendChild(el("h3", { text: "Résumé" }));
-  summarySection.appendChild(el("p", { text: analysis.resume || "Non disponible." }));
+  summarySection.appendChild(el("h3", { text: labels.summary }));
+  summarySection.appendChild(el("p", { text: analysis.resume || labels.noSummary }));
   contentEl.appendChild(summarySection);
 
   if (Array.isArray(analysis.pointsCles) && analysis.pointsCles.length) {
     const section = el("div", { className: "section" });
-    section.appendChild(el("h3", { text: "Points clés" }));
+    section.appendChild(el("h3", { text: labels.keyPoints }));
     const list = el("ul", { className: "points-list" });
     analysis.pointsCles.forEach((point) => list.appendChild(el("li", { text: point })));
     section.appendChild(list);
@@ -280,7 +309,7 @@ function renderResult({ meta, analysis, truncated }) {
 
   if (Array.isArray(analysis.plan) && analysis.plan.length) {
     const section = el("div", { className: "section" });
-    section.appendChild(el("h3", { text: "Contenu réorganisé par thème" }));
+    section.appendChild(el("h3", { text: labels.reorganized }));
     analysis.plan.forEach((item) => {
       const wrapper = el("div", { className: "plan-item" });
       wrapper.appendChild(el("h4", { text: item.titre }));
@@ -292,25 +321,27 @@ function renderResult({ meta, analysis, truncated }) {
 
   if (Array.isArray(analysis.affirmations) && analysis.affirmations.length) {
     const section = el("div", { className: "section" });
-    section.appendChild(el("h3", { text: "Vérification des faits" }));
+    section.appendChild(el("h3", { text: labels.factCheck }));
     const list = el("div", { className: "claims-list" });
     analysis.affirmations.forEach((item) => {
       const claim = el("div", { className: "claim" });
+      const verdictText = labels.verdicts[item.verdict] || item.verdict || "?";
       const verdictBadge = el("span", {
         className: `verdict ${verdictClass(item.verdict)}`,
-        text: item.verdict || "?",
+        text: verdictText,
       });
       const wrap = document.createElement("div");
       wrap.appendChild(verdictBadge);
       if (item.confiance) {
-        wrap.appendChild(el("span", { className: "confiance", text: `confiance : ${item.confiance}` }));
+        const confText = labels.confidences[item.confiance] || item.confiance;
+        wrap.appendChild(el("span", { className: "confiance", text: `${labels.confidenceLabel} : ${confText}` }));
       }
       claim.appendChild(wrap);
       claim.appendChild(el("div", { className: "claim-text", text: item.citation }));
       claim.appendChild(el("p", { text: item.commentaire || "" }));
       if (Array.isArray(item.sources) && item.sources.length > 0) {
         const sourcesEl = el("p", { className: "sources" });
-        sourcesEl.appendChild(el("span", { text: "Sources : " }));
+        sourcesEl.appendChild(el("span", { text: `${labels.sourcesLabel} : ` }));
         item.sources.forEach((url, i) => {
           if (i > 0) sourcesEl.appendChild(document.createTextNode("  •  "));
           const link = el("a", { text: url });
@@ -328,17 +359,13 @@ function renderResult({ meta, analysis, truncated }) {
   }
 
   const reliabilitySection = el("div", { className: "section" });
-  reliabilitySection.appendChild(el("h3", { text: "Fiabilité et véracité globale" }));
-  reliabilitySection.appendChild(el("p", { text: analysis.commentaireFiabilite || "Non disponible." }));
+  reliabilitySection.appendChild(el("h3", { text: labels.reliability }));
+  reliabilitySection.appendChild(el("p", { text: analysis.commentaireFiabilite || labels.noSummary }));
   contentEl.appendChild(reliabilitySection);
 
   const limitsSection = el("div", { className: "section" });
-  limitsSection.appendChild(el("h3", { text: "Limites de cette analyse" }));
-  limitsSection.appendChild(
-    el("p", {
-      text: analysis.limitesAnalyse || "Analyse générée automatiquement, avec recherche web en temps réel.",
-    })
-  );
+  limitsSection.appendChild(el("h3", { text: labels.limits }));
+  limitsSection.appendChild(el("p", { text: analysis.limitesAnalyse || labels.defaultLimits }));
   contentEl.appendChild(limitsSection);
 
   resultEl.classList.remove("hidden");
@@ -376,6 +403,7 @@ form.addEventListener("submit", async (e) => {
   e.preventDefault();
   const url = urlInput.value.trim();
   if (!url) return;
+  const lang = window.SUPPORTED_LANGS.includes(langSelect.value) ? langSelect.value : "fr";
 
   const apiKey = getApiKey();
   if (!apiKey) {
@@ -406,9 +434,10 @@ form.addEventListener("submit", async (e) => {
       title: transcriptData.meta.title,
       author: transcriptData.meta.author,
       fullText: transcriptData.fullText,
+      lang,
     });
 
-    lastPayload = { meta: transcriptData.meta, analysis, truncated };
+    lastPayload = { meta: transcriptData.meta, analysis, truncated, lang };
     renderResult(lastPayload);
     setStatus(null);
   } catch (err) {

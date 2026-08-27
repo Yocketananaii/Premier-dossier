@@ -15,6 +15,10 @@ Application web (installable comme app sur **Android et iOS**) qui extrait la tr
    - un rappel honnête des limites de l'analyse.
 5. Vous pouvez télécharger le dossier en PDF ou en `.txt` (sources incluses) — cette étape repasse par le serveur (génération de fichier), sans clé API requise.
 
+### Langue du dossier
+
+Un sélecteur à côté du champ URL permet de choisir la langue du dossier généré : 🇫🇷 français, 🇬🇧 anglais, 🇪🇸 espagnol, 🇩🇪 allemand, 🇮🇹 italien ou 🇵🇹 portugais — indépendamment de la langue parlée dans la vidéo d'origine. Le choix est mémorisé sur l'appareil et s'applique au résumé, aux points clés, au fact-checking et à l'export PDF/texte.
+
 ### Pourquoi une clé API par utilisateur ?
 
 Un compte Claude.ai (l'abonnement de chat Free/Pro/Max) **n'est pas la même chose** qu'une clé API : l'API est facturée séparément, à l'usage, via https://console.anthropic.com/settings/keys. Chaque personne qui utilise cette application doit y créer sa propre clé (quelques dollars de crédit suffisent pour de nombreuses analyses) et la coller dans les **Paramètres (⚙️)** de l'app. Elle est stockée uniquement dans le navigateur de l'appareil (`localStorage`) et n'est jamais envoyée au serveur de l'application — seulement à l'API d'Anthropic, en HTTPS direct depuis le téléphone/ordinateur.
@@ -81,9 +85,12 @@ L'application est accessible sur http://localhost:3000. Ouvrez les Paramètres (
 ```
 server.js                serveur Express : récupération transcription + export PDF/texte (aucune clé API ici)
 src/youtube.js           extraction de l'ID vidéo, récupération des métadonnées et de la transcription
-src/pdf.js               génération du PDF
-src/text.js              génération de l'export texte
+src/pdf.js               génération du PDF (multilingue)
+src/text.js              génération de l'export texte (multilingue)
+src/i18n.js              dictionnaire de traduction des libellés (PDF/texte), copié tel quel en public/i18n.js pour le navigateur
 scripts/generate-icons.js génère les icônes PNG de la PWA (public/icons/)
 public/                  interface web (PWA) : HTML/CSS/JS, manifest, service worker
-public/script.js         logique client : gestion de la clé API, appel direct à l'API Claude (avec web_search), rendu du résultat
+public/script.js         logique client : gestion de la clé API et de la langue, appel direct à l'API Claude (avec web_search), rendu du résultat
 ```
+
+**Note pour la maintenance** : `src/i18n.js` et `public/i18n.js` doivent rester identiques (le second est chargé tel quel par le navigateur, le premier via `require()` côté serveur). Toute modification des traductions doit être répercutée dans les deux fichiers.

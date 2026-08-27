@@ -85,6 +85,16 @@ main {
   font-size: 1rem;
 }
 
+#lang-select {
+  flex: 0 0 auto;
+  padding: 0.8rem 0.7rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
 button {
   padding: 0.8rem 1.3rem;
   border-radius: 8px;

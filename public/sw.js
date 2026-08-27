@@ -1,12 +1,14 @@
-const CACHE_NAME = "premier-dossier-v1";
+const CACHE_NAME = "premier-dossier-v2";
 const APP_SHELL = [
   "/",
   "/index.html",
   "/style.css",
+  "/i18n.js",
   "/script.js",
   "/manifest.json",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
+  "/icons/apple-touch-icon.png",
 ];
 
 self.addEventListener("install", (event) => {
