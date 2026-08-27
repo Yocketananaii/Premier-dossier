@@ -53,10 +53,33 @@ async function fetchMetadata(videoId) {
   };
 }
 
+// YouTube sert parfois une page de consentement RGPD aux requêtes venant
+// d'IP de datacenter (fréquent sur les hébergeurs cloud comme Render), ce qui
+// casse l'extraction des sous-titres même quand ils existent. Ce cookie
+// standard ("j'ai déjà consenti") évite cette page interstitielle. On logue
+// aussi les réponses HTTP non-OK pour diagnostiquer précisément en cas
+// d'échec persistant (visible dans les logs du serveur).
+async function youtubeFetch(url, options = {}) {
+  const res = await fetch(url, {
+    ...options,
+    headers: {
+      ...(options.headers || {}),
+      Cookie: "CONSENT=YES+1",
+    },
+  });
+  if (!res.ok) {
+    console.error(`[youtube] Requête échouée : ${url} -> HTTP ${res.status}`);
+  }
+  return res;
+}
+
 async function fetchTranscript(videoId, lang) {
   let segments;
   try {
-    segments = await YoutubeTranscript.fetchTranscript(videoId, lang ? { lang } : undefined);
+    segments = await YoutubeTranscript.fetchTranscript(videoId, {
+      ...(lang ? { lang } : {}),
+      fetch: youtubeFetch,
+    });
   } catch (err) {
     // Log l'erreur réelle côté serveur (visible dans les logs Render) : le message
     // renvoyé au navigateur ne doit pas dévoiler de détails techniques inutiles,
