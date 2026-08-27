@@ -2,17 +2,30 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Premier Dossier — Analyse de vidéos YouTube</title>
+<meta name="description" content="Extrait, résume et vérifie les faits d'une vidéo YouTube." />
+<meta name="theme-color" content="#0f1220" />
+<link rel="manifest" href="/manifest.json" />
+<link rel="icon" href="/icons/icon-192.png" />
+<link rel="apple-touch-icon" href="/icons/icon-192.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Dossier" />
 <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
   <header>
+    <button id="settings-btn" class="icon-btn" title="Paramètres" aria-label="Paramètres">⚙️</button>
     <h1>📼 Premier Dossier</h1>
     <p class="subtitle">Collez une URL YouTube : obtenez un résumé structuré, les points clés, et une vérification des faits annoncés.</p>
   </header>
 
   <main>
+    <div id="key-banner" class="key-banner hidden">
+      ⚠️ Aucune clé API Anthropic enregistrée. <button id="key-banner-btn" class="link-btn">En ajouter une</button> pour pouvoir analyser une vidéo.
+    </div>
+
     <form id="analyze-form">
       <input
         type="text"
@@ -45,8 +58,26 @@
   </main>
 
   <footer>
-    <p>Les vérifications de faits sont générées par une IA qui effectue des recherches web en temps réel pour chaque affirmation. Les sources sont indiquées, mais vérifiez toujours les points importants par vous-même.</p>
+    <p>Les vérifications de faits sont générées par une IA qui effectue des recherches web en temps réel pour chaque affirmation, avec ta propre clé API Anthropic. Les sources sont indiquées, mais vérifie toujours les points importants par toi-même.</p>
   </footer>
+
+  <div id="settings-modal" class="modal hidden">
+    <div class="modal-content">
+      <h3>Paramètres</h3>
+      <p class="muted">
+        Ta clé API Anthropic est stockée uniquement sur cet appareil (dans le navigateur) et n'est jamais envoyée à un
+        serveur autre que celui d'Anthropic. Obtiens une clé sur
+        <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer">console.anthropic.com</a>.
+      </p>
+      <label for="api-key-input">Clé API Anthropic</label>
+      <input type="password" id="api-key-input" placeholder="sk-ant-..." autocomplete="off" spellcheck="false" />
+      <div class="modal-actions">
+        <button id="save-key-btn">Enregistrer</button>
+        <button id="clear-key-btn" class="secondary">Supprimer</button>
+        <button id="close-settings-btn" class="secondary">Fermer</button>
+      </div>
+    </div>
+  </div>
 
   <script src="/script.js"></script>
 </body>

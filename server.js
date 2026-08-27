@@ -3,7 +3,6 @@ const path = require("path");
 const express = require("express");
 
 const { extractVideoId, fetchMetadata, fetchTranscript } = require("./src/youtube");
-const { analyzeTranscript } = require("./src/analyze");
 const { generatePdf } = require("./src/pdf");
 const { generateText } = require("./src/text");
 
@@ -11,7 +10,10 @@ const app = express();
 app.use(express.json({ limit: "5mb" }));
 app.use(express.static(path.join(__dirname, "public")));
 
-app.post("/api/analyze", async (req, res) => {
+// Récupère uniquement la transcription + les métadonnées : aucune clé API Claude
+// n'est nécessaire côté serveur. L'appel au LLM (avec la clé propre à chaque
+// utilisateur) est effectué directement depuis le navigateur (voir public/script.js).
+app.post("/api/transcript", async (req, res) => {
   const { url, lang } = req.body || {};
   const videoId = extractVideoId(url);
 
@@ -27,12 +29,6 @@ app.post("/api/analyze", async (req, res) => {
       fetchTranscript(videoId, lang),
     ]);
 
-    const { analysis, truncated } = await analyzeTranscript({
-      title: meta.title,
-      author: meta.author,
-      fullText: transcript.fullText,
-    });
-
     const fullMeta = {
       ...meta,
       videoId,
@@ -40,7 +36,7 @@ app.post("/api/analyze", async (req, res) => {
       durationSeconds: transcript.durationSeconds,
     };
 
-    res.json({ meta: fullMeta, analysis, truncated });
+    res.json({ meta: fullMeta, fullText: transcript.fullText });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message || "Une erreur inattendue est survenue." });
