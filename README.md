@@ -19,11 +19,27 @@ Application web (installable comme app sur **Android et iOS**) qui extrait la tr
 
 Un sélecteur à côté du champ URL permet de choisir la langue du dossier généré : 🇫🇷 français, 🇬🇧 anglais, 🇪🇸 espagnol, 🇩🇪 allemand, 🇮🇹 italien ou 🇵🇹 portugais — indépendamment de la langue parlée dans la vidéo d'origine. Le choix est mémorisé sur l'appareil et s'applique au résumé, aux points clés, au fact-checking et à l'export PDF/texte.
 
-### Partager un lien directement depuis WhatsApp (Android)
+### Partager un lien directement depuis WhatsApp
 
-Une fois l'app installée sur Android (voir plus bas), elle apparaît comme option dans le menu de partage du téléphone : quand quelqu'un vous envoie un lien YouTube sur WhatsApp, appuyez longuement dessus → **Partager** → choisissez **Extracto**. L'app s'ouvre avec le lien déjà collé et lance l'analyse automatiquement (si votre clé API est déjà enregistrée).
+**Sur Android**, une fois l'app installée (voir plus bas), elle apparaît directement comme option dans le menu de partage du téléphone : quand quelqu'un vous envoie un lien YouTube sur WhatsApp, appuyez longuement dessus → **Partager** → choisissez **Extracto**. L'app s'ouvre avec le lien déjà collé et lance l'analyse automatiquement (si votre clé API est déjà enregistrée).
 
-⚠️ Cette fonctionnalité (« Web Share Target ») n'existe que sur **Android**. **Sur iPhone, Apple ne propose pas cette possibilité** pour les apps installées depuis Safari : il faut copier le lien puis le coller manuellement dans le champ de l'app. Une vraie extension de partage native serait possible mais nécessiterait de publier une app native sur l'App Store (compte développeur payant, etc.) — non fait pour l'instant.
+**Sur iPhone**, Apple ne permet pas à une app installée depuis Safari de s'ajouter elle-même au menu de partage (contrairement à Android) — c'est une limitation du système, pas de l'application. La solution gratuite et sans App Store consiste à créer un petit **Raccourci** (app **Raccourcis**, préinstallée sur tout iPhone), qui lui peut apparaître dans le menu de partage et transmettre le lien à Extracto. À faire une seule fois :
+
+1. Ouvrez l'app **Raccourcis** → onglet **Mes raccourcis** → **+** (nouveau raccourci).
+2. **Ajouter une action** → cherchez **Texte** → ajoutez-la. Touchez le champ de texte, puis touchez **Entrée du raccourci** dans la barre de variables au-dessus du clavier pour l'insérer.
+3. **Ajouter une action** → cherchez **Encoder l'URL** → ajoutez-la (elle prendra automatiquement le texte de l'étape précédente en entrée).
+4. **Ajouter une action** → cherchez **URL** → dans le champ, tapez `https://VOTRE-URL.onrender.com/?text=` puis insérez le résultat de l'étape « Encoder l'URL » juste après (via la barre de variables).
+5. **Ajouter une action** → cherchez **Ouvrir les URL** → laissez-la utiliser l'URL de l'étape précédente.
+6. Touchez l'icône **⚙️** en haut du raccourci → activez **« Utiliser avec le partage »** → réglez les types acceptés sur **URLs** et **Texte**.
+7. Renommez le raccourci **« Extracto »**, donnez-lui une icône/couleur sympa si vous voulez, puis fermez.
+
+Le raccourci apparaît désormais dans le menu de partage de Safari, WhatsApp, YouTube, etc. — même principe que sur Android : sélectionner **Extracto** ouvre l'app avec le lien déjà rempli.
+
+**Pour l'envoyer à vos proches** (pas besoin qu'ils refassent toutes ces étapes) : dans l'app Raccourcis, appui long sur le raccourci **Extracto** → **Partager** → **Copier le lien iCloud**. Collez ce lien dans WhatsApp ; chacun n'a plus qu'à l'ouvrir et toucher **« Ajouter un raccourci »** (un message « raccourci non signé » peut apparaître — c'est normal pour un raccourci personnel, sans rapport avec la sécurité de l'app elle-même).
+
+*Remplacez `VOTRE-URL.onrender.com` par l'adresse réelle de votre app une fois déployée (voir « Déployer l'app » ci-dessous).*
+
+⚠️ Différence avec Android : le raccourci ouvre le lien dans Safari plutôt que dans l'icône installée d'Extracto — l'expérience reste identique (même clé API reconnue, même analyse), juste avec la barre d'adresse Safari visible. Une vraie intégration native (icône Extracto elle-même dans le menu de partage iOS) nécessiterait de publier une app sur l'App Store (compte développeur à 99 $/an, Mac ou service de build) — pas fait pour l'instant, mais possible plus tard si besoin.
 
 ### Pourquoi une clé API par utilisateur ?
 
@@ -95,7 +111,7 @@ L'application est accessible sur http://localhost:3000. Ouvrez les Paramètres (
 - Les vidéos très longues (plusieurs heures) peuvent voir leur transcription tronquée avant l'analyse afin de rester dans la limite de contexte du modèle ; un avertissement est alors affiché.
 - Les vidéos privées, en accès restreint ou supprimées ne peuvent pas être traitées.
 - L'appel à Claude se fait directement depuis le navigateur : sur un appareil partagé ou public, pensez à supprimer votre clé API dans les Paramètres après usage.
-- Sur iOS, l'installation en écran d'accueil plein écran n'est possible que depuis Safari (pas depuis Chrome/Firefox iOS), et le partage direct depuis WhatsApp n'est pas disponible (copier-coller le lien à la place). Le stockage de la clé API peut être effacé par Safari après une longue période d'inactivité (voir ci-dessus).
+- Sur iOS, l'installation en écran d'accueil plein écran n'est possible que depuis Safari (pas depuis Chrome/Firefox iOS), et le partage direct depuis WhatsApp nécessite de créer un Raccourci une fois (voir ci-dessus) — sans lui, il faut copier-coller le lien manuellement. Le stockage de la clé API peut être effacé par Safari après une longue période d'inactivité (voir ci-dessus).
 - Sur le plan gratuit Render, le serveur peut mettre jusqu'à une minute à répondre après une période d'inactivité.
 
 ## Structure du projet

@@ -62,10 +62,19 @@ function isInDroplet(relX, relY) {
   return dx * dx + dy * dy <= 0.1 * 0.1;
 }
 
+// petit reflet pour donner un aspect "précieux" (goutte d'or) à l'essentiel extrait
+function isInHighlight(relX, relY) {
+  const dx = relX + 0.035;
+  const dy = relY - 0.465;
+  return dx * dx + dy * dy <= 0.028 * 0.028;
+}
+
 function drawIconAt(size, { opaque = false } = {}) {
   const px = new Uint8Array(size * size * 4);
   const bg = [30, 34, 63]; // fond sombre proche de --bg de l'app
-  const accent = [108, 140, 255]; // --accent
+  const accent = [108, 140, 255]; // --accent : l'entonnoir (le contenu brut de la vidéo)
+  const essence = [247, 181, 56]; // or chaud : la goutte extraite, "l'essentiel" mis en valeur
+  const highlight = [255, 226, 173]; // reflet clair sur la goutte, effet précieux
   const cx = size / 2;
   const cy = size / 2;
   const outerRadius = size * 0.46;
@@ -85,8 +94,11 @@ function drawIconAt(size, { opaque = false } = {}) {
 
       const relX = dx / (half * 0.92);
       const relY = dy / (half * 0.92);
-      const isShape = isInFunnel(relX, relY) || isInDroplet(relX, relY);
-      const color = isShape ? accent : bg;
+
+      let color = bg;
+      if (isInHighlight(relX, relY)) color = highlight;
+      else if (isInDroplet(relX, relY)) color = essence;
+      else if (isInFunnel(relX, relY)) color = accent;
 
       px[idx] = color[0];
       px[idx + 1] = color[1];
