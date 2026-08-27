@@ -1,4 +1,11 @@
-const { YoutubeTranscript } = require("youtube-transcript");
+const {
+  YoutubeTranscript,
+  YoutubeTranscriptTooManyRequestError,
+  YoutubeTranscriptVideoUnavailableError,
+  YoutubeTranscriptDisabledError,
+  YoutubeTranscriptNotAvailableError,
+  YoutubeTranscriptNotAvailableLanguageError,
+} = require("youtube-transcript");
 
 const URL_PATTERNS = [
   /(?:youtube\.com\/watch\?v=|youtube\.com\/live\/|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([\w-]{11})/,
@@ -51,8 +58,27 @@ async function fetchTranscript(videoId, lang) {
   try {
     segments = await YoutubeTranscript.fetchTranscript(videoId, lang ? { lang } : undefined);
   } catch (err) {
+    // Log l'erreur réelle côté serveur (visible dans les logs Render) : le message
+    // renvoyé au navigateur ne doit pas dévoiler de détails techniques inutiles,
+    // mais on distingue les cas pour donner un message exploitable à l'utilisateur.
+    console.error("Erreur de récupération de la transcription :", err);
+
+    if (err instanceof YoutubeTranscriptTooManyRequestError) {
+      throw new Error(
+        "YouTube bloque temporairement les requêtes automatiques depuis ce serveur (trop de demandes). Réessayez dans quelques minutes."
+      );
+    }
+    if (err instanceof YoutubeTranscriptVideoUnavailableError) {
+      throw new Error("Cette vidéo n'est plus disponible sur YouTube (supprimée, privée, ou ID invalide).");
+    }
+    if (err instanceof YoutubeTranscriptDisabledError || err instanceof YoutubeTranscriptNotAvailableError) {
+      throw new Error("Cette vidéo n'a pas de sous-titres disponibles (ni automatiques, ni manuels).");
+    }
+    if (err instanceof YoutubeTranscriptNotAvailableLanguageError) {
+      throw new Error("Cette vidéo n'a pas de sous-titres dans la langue demandée.");
+    }
     throw new Error(
-      "Impossible de récupérer la transcription de cette vidéo. Elle ne dispose peut-être pas de sous-titres (automatiques ou manuels)."
+      "Impossible de récupérer la transcription de cette vidéo pour le moment. Réessayez, ou essayez avec une autre vidéo."
     );
   }
 
