@@ -25,7 +25,7 @@
 
   <main>
     <div id="key-banner" class="key-banner hidden">
-      ⚠️ Aucune clé API Anthropic enregistrée. <button id="key-banner-btn" class="link-btn">En ajouter une</button> pour pouvoir analyser une vidéo.
+      ⚠️ Aucune clé API enregistrée. <button id="key-banner-btn" class="link-btn">En ajouter une</button> pour pouvoir analyser une vidéo.
     </div>
 
     <form id="analyze-form">
@@ -70,18 +70,35 @@
   </main>
 
   <footer>
-    <p>Les vérifications de faits sont générées par une IA qui effectue des recherches web en temps réel pour chaque affirmation, avec ta propre clé API Anthropic. Les sources sont indiquées, mais vérifie toujours les points importants par toi-même.</p>
+    <p>Les vérifications de faits sont générées par une IA qui effectue des recherches web en temps réel pour chaque affirmation, avec ta propre clé API. Les sources sont indiquées, mais vérifie toujours les points importants par toi-même.</p>
   </footer>
 
   <div id="settings-modal" class="modal hidden">
     <div class="modal-content">
       <h3>Paramètres</h3>
-      <label for="api-key-input">Clé API Anthropic</label>
-      <input type="password" id="api-key-input" placeholder="sk-ant-..." autocomplete="off" spellcheck="false" />
-      <p class="muted small">Stockée uniquement sur cet appareil, jamais envoyée ailleurs qu'à Anthropic.</p>
 
-      <details class="help-details">
-        <summary>Je n'ai pas encore de clé — comment en obtenir une ?</summary>
+      <label for="provider-select">Fournisseur IA</label>
+      <select id="provider-select">
+        <option value="gemini">Google Gemini — gratuit, sans carte bancaire</option>
+        <option value="claude">Anthropic Claude — payant, qualité supérieure</option>
+      </select>
+
+      <label for="api-key-input" id="api-key-label">Clé API Gemini</label>
+      <input type="password" id="api-key-input" placeholder="AIza..." autocomplete="off" spellcheck="false" />
+      <p class="muted small">Stockée uniquement sur cet appareil, jamais envoyée ailleurs qu'au fournisseur choisi.</p>
+
+      <details class="help-details" id="help-gemini">
+        <summary>Je n'ai pas encore de clé Gemini — comment en obtenir une ?</summary>
+        <ol class="help-steps">
+          <li>Va sur <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">aistudio.google.com/apikey</a> et connecte-toi avec un compte Google (100 % gratuit, aucune carte bancaire requise).</li>
+          <li>Touche <strong>Create API key</strong>, choisis un projet (ou laisse celui proposé par défaut).</li>
+          <li>Copie la clé affichée (elle commence par <code>AIza...</code>).</li>
+          <li>Reviens ici, colle-la dans le champ ci-dessus, puis touche <strong>Enregistrer</strong>.</li>
+        </ol>
+      </details>
+
+      <details class="help-details hidden" id="help-claude">
+        <summary>Je n'ai pas encore de clé Anthropic — comment en obtenir une ?</summary>
         <ol class="help-steps">
           <li>Va sur <a href="https://console.anthropic.com" target="_blank" rel="noopener noreferrer">console.anthropic.com</a> et crée un compte (avec Google ou ton adresse e-mail).</li>
           <li>Dans le menu <strong>Billing</strong>, ajoute quelques dollars de crédit (5 $ suffisent pour de nombreuses analyses).</li>

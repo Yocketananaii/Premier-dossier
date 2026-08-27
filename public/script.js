@@ -1,7 +1,13 @@
-const API_KEY_STORAGE = "premierDossier.anthropicApiKey";
+const PROVIDER_STORAGE = "premierDossier.provider";
+const GEMINI_KEY_STORAGE = "premierDossier.geminiApiKey";
+const ANTHROPIC_KEY_STORAGE = "premierDossier.anthropicApiKey";
 const LANG_STORAGE = "premierDossier.lang";
+
 const CLAUDE_MODEL = "claude-sonnet-5";
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
+const GEMINI_MODEL = "gemini-3.6-flash";
+const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+
 const MAX_TRANSCRIPT_CHARS = 350000; // marge de sécurité sous la fenêtre de contexte
 const MAX_WEB_SEARCHES = 10;
 const MAX_PAUSE_CONTINUATIONS = 6;
@@ -23,27 +29,52 @@ const keyBanner = document.getElementById("key-banner");
 const keyBannerBtn = document.getElementById("key-banner-btn");
 const settingsBtn = document.getElementById("settings-btn");
 const settingsModal = document.getElementById("settings-modal");
+const providerSelect = document.getElementById("provider-select");
+const apiKeyLabel = document.getElementById("api-key-label");
 const apiKeyInput = document.getElementById("api-key-input");
+const helpGemini = document.getElementById("help-gemini");
+const helpClaude = document.getElementById("help-claude");
 const saveKeyBtn = document.getElementById("save-key-btn");
 const clearKeyBtn = document.getElementById("clear-key-btn");
 const closeSettingsBtn = document.getElementById("close-settings-btn");
 
 let lastPayload = null;
 
-// ---------- Clé API (stockée uniquement sur cet appareil) ----------
+// ---------- Fournisseur + clé API (stockés uniquement sur cet appareil) ----------
 
-function getApiKey() {
+function getProvider() {
   try {
-    return localStorage.getItem(API_KEY_STORAGE) || "";
+    const p = localStorage.getItem(PROVIDER_STORAGE);
+    return p === "claude" ? "claude" : "gemini";
+  } catch {
+    return "gemini";
+  }
+}
+
+function setProvider(provider) {
+  try {
+    localStorage.setItem(PROVIDER_STORAGE, provider === "claude" ? "claude" : "gemini");
+  } catch {
+    // pas grave si on ne peut pas mémoriser la préférence
+  }
+}
+
+function keyStorageFor(provider) {
+  return provider === "claude" ? ANTHROPIC_KEY_STORAGE : GEMINI_KEY_STORAGE;
+}
+
+function getApiKey(provider = getProvider()) {
+  try {
+    return localStorage.getItem(keyStorageFor(provider)) || "";
   } catch {
     return "";
   }
 }
 
-function setApiKey(key) {
+function setApiKey(provider, key) {
   try {
-    if (key) localStorage.setItem(API_KEY_STORAGE, key);
-    else localStorage.removeItem(API_KEY_STORAGE);
+    if (key) localStorage.setItem(keyStorageFor(provider), key);
+    else localStorage.removeItem(keyStorageFor(provider));
   } catch {
     // stockage indisponible (navigation privée, quota...) : on continue sans persister
   }
@@ -55,8 +86,19 @@ function refreshKeyBanner() {
   keyBanner.classList.toggle("hidden", hasKey);
 }
 
+function updateProviderUI(provider) {
+  const isClaude = provider === "claude";
+  apiKeyLabel.textContent = isClaude ? "Clé API Anthropic" : "Clé API Gemini";
+  apiKeyInput.placeholder = isClaude ? "sk-ant-..." : "AIza...";
+  helpGemini.classList.toggle("hidden", isClaude);
+  helpClaude.classList.toggle("hidden", !isClaude);
+}
+
 function openSettings() {
-  apiKeyInput.value = getApiKey();
+  const provider = getProvider();
+  providerSelect.value = provider;
+  apiKeyInput.value = getApiKey(provider);
+  updateProviderUI(provider);
   settingsModal.classList.remove("hidden");
 }
 function closeSettings() {
@@ -69,13 +111,21 @@ closeSettingsBtn.addEventListener("click", closeSettings);
 settingsModal.addEventListener("click", (e) => {
   if (e.target === settingsModal) closeSettings();
 });
+providerSelect.addEventListener("change", () => {
+  const provider = providerSelect.value === "claude" ? "claude" : "gemini";
+  setProvider(provider);
+  apiKeyInput.value = getApiKey(provider);
+  updateProviderUI(provider);
+  refreshKeyBanner();
+});
 saveKeyBtn.addEventListener("click", () => {
-  setApiKey(apiKeyInput.value.trim());
+  const provider = providerSelect.value === "claude" ? "claude" : "gemini";
+  setApiKey(provider, apiKeyInput.value.trim());
   closeSettings();
 });
 clearKeyBtn.addEventListener("click", () => {
   apiKeyInput.value = "";
-  setApiKey("");
+  setApiKey(providerSelect.value === "claude" ? "claude" : "gemini", "");
 });
 
 refreshKeyBanner();
@@ -149,7 +199,7 @@ function formatDuration(seconds, labels) {
   return h > 0 ? `${h}:${mm}:${ss}` : `${m}:${ss}`;
 }
 
-// ---------- Appel direct à l'API Claude depuis le navigateur ----------
+// ---------- Appel direct à l'API (Gemini ou Claude) depuis le navigateur ----------
 
 function buildSystemPrompt(lang) {
   const langInfo = window.getI18n(lang);
@@ -161,7 +211,7 @@ function buildSystemPrompt(lang) {
 
   return `Tu es un analyste rigoureux chargé de traiter la transcription d'une vidéo YouTube. Nous sommes le ${today}.
 
-Tu disposes d'un outil de recherche web (web_search). Utilise-le systématiquement pour vérifier chaque affirmation factuelle vérifiable présente dans la transcription (chiffres, dates, citations, événements, études, déclarations attribuées à quelqu'un, etc.) avant de rendre ton verdict. Fais autant de recherches distinctes que nécessaire, en croisant si possible plusieurs sources fiables. N'utilise PAS uniquement tes connaissances internes pour les affirmations vérifiables : cherche sur le web pour confirmer ou infirmer, en particulier si les faits sont récents, chiffrés, ou controversés.
+Tu disposes d'un outil de recherche web. Utilise-le systématiquement pour vérifier chaque affirmation factuelle vérifiable présente dans la transcription (chiffres, dates, citations, événements, études, déclarations attribuées à quelqu'un, etc.) avant de rendre ton verdict. Fais autant de recherches distinctes que nécessaire, en croisant si possible plusieurs sources fiables. N'utilise PAS uniquement tes connaissances internes pour les affirmations vérifiables : cherche sur le web pour confirmer ou infirmer, en particulier si les faits sont récents, chiffrés, ou controversés.
 
 Une fois toutes les recherches terminées, ta toute dernière réponse doit être UNIQUEMENT un objet JSON valide (aucun texte avant ou après, pas de balises markdown), respectant exactement ce schéma :
 
@@ -215,7 +265,9 @@ function extractJson(text) {
   return JSON.parse(trimmed.slice(start, end + 1));
 }
 
-async function callClaude(apiKey, messages, lang) {
+// ----- Claude (Anthropic) -----
+
+async function callClaude(apiKey, systemPrompt, messages) {
   const res = await fetch(ANTHROPIC_API_URL, {
     method: "POST",
     headers: {
@@ -227,7 +279,7 @@ async function callClaude(apiKey, messages, lang) {
     body: JSON.stringify({
       model: CLAUDE_MODEL,
       max_tokens: 8000,
-      system: buildSystemPrompt(lang),
+      system: systemPrompt,
       tools: [{ type: "web_search_20260209", name: "web_search", max_uses: MAX_WEB_SEARCHES }],
       messages,
     }),
@@ -244,16 +296,12 @@ async function callClaude(apiKey, messages, lang) {
   return data;
 }
 
-async function analyzeTranscript({ apiKey, title, author, fullText, lang }) {
-  const truncated = fullText.length > MAX_TRANSCRIPT_CHARS;
-  const text = truncated ? fullText.slice(0, MAX_TRANSCRIPT_CHARS) : fullText;
-
-  const messages = [{ role: "user", content: buildUserPrompt({ title, author, fullText: text, truncated }) }];
-
+async function runClaude(apiKey, systemPrompt, userPrompt) {
+  const messages = [{ role: "user", content: userPrompt }];
   let response;
   let continuations = 0;
   do {
-    response = await callClaude(apiKey, messages, lang);
+    response = await callClaude(apiKey, systemPrompt, messages);
     if (response.stop_reason === "pause_turn") {
       messages.push({ role: "assistant", content: response.content });
       messages.push({ role: "user", content: "Continue." });
@@ -267,13 +315,83 @@ async function analyzeTranscript({ apiKey, title, author, fullText, lang }) {
   if (textBlocks.length === 0) {
     throw new Error("Réponse inattendue de l'IA (aucun texte).");
   }
+  return { text: textBlocks[textBlocks.length - 1].text, noSearchFallback: false };
+}
 
-  const lastText = textBlocks[textBlocks.length - 1].text;
+// ----- Gemini (Google) -----
+
+async function requestGemini(apiKey, systemPrompt, userPrompt, withSearch) {
+  const payload = {
+    systemInstruction: { parts: [{ text: systemPrompt }] },
+    contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+  };
+  if (withSearch) payload.tools = [{ google_search: {} }];
+
+  const res = await fetch(`${GEMINI_API_URL}?key=${encodeURIComponent(apiKey)}`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  return { res, data };
+}
+
+async function runGemini(apiKey, systemPrompt, userPrompt) {
+  let { res, data } = await requestGemini(apiKey, systemPrompt, userPrompt, true);
+  let noSearchFallback = false;
+
+  if (!res.ok) {
+    const message = data?.error?.message || "";
+    const searchRelated = /search|ground|tool/i.test(message);
+    if (searchRelated) {
+      ({ res, data } = await requestGemini(apiKey, systemPrompt, userPrompt, false));
+      noSearchFallback = res.ok;
+    }
+    if (!res.ok) {
+      if (res.status === 400 || res.status === 403) {
+        throw new Error(
+          "Clé API Gemini invalide, ou fonctionnalité non disponible avec cette clé. Vérifie-la dans les paramètres."
+        );
+      }
+      throw new Error(data?.error?.message || `Erreur API Gemini (HTTP ${res.status}).`);
+    }
+  }
+
+  const candidate = data?.candidates?.[0];
+  if (!candidate) {
+    const reason = data?.promptFeedback?.blockReason;
+    throw new Error(
+      reason ? `Réponse bloquée par Gemini (${reason}).` : "Réponse inattendue de Gemini (aucun résultat)."
+    );
+  }
+  const text = (candidate.content?.parts || []).map((p) => p.text || "").join("");
+  return { text, noSearchFallback };
+}
+
+// ----- Orchestration -----
+
+async function analyzeTranscript({ provider, apiKey, title, author, fullText, lang }) {
+  const truncated = fullText.length > MAX_TRANSCRIPT_CHARS;
+  const text = truncated ? fullText.slice(0, MAX_TRANSCRIPT_CHARS) : fullText;
+
+  const systemPrompt = buildSystemPrompt(lang);
+  const userPrompt = buildUserPrompt({ title, author, fullText: text, truncated });
+
+  const { text: rawText, noSearchFallback } =
+    provider === "claude"
+      ? await runClaude(apiKey, systemPrompt, userPrompt)
+      : await runGemini(apiKey, systemPrompt, userPrompt);
+
   let analysis;
   try {
-    analysis = extractJson(lastText);
+    analysis = extractJson(rawText);
   } catch (err) {
     throw new Error("Impossible d'interpréter la réponse de l'IA : " + err.message);
+  }
+
+  if (noSearchFallback) {
+    const note = window.getI18n(lang).labels.noSearchFallbackNote;
+    analysis.limitesAnalyse = analysis.limitesAnalyse ? `${analysis.limitesAnalyse} ${note}` : note;
   }
 
   return { analysis, truncated };
@@ -404,10 +522,11 @@ form.addEventListener("submit", async (e) => {
   const url = urlInput.value.trim();
   if (!url) return;
   const lang = window.SUPPORTED_LANGS.includes(langSelect.value) ? langSelect.value : "fr";
+  const provider = getProvider();
 
-  const apiKey = getApiKey();
+  const apiKey = getApiKey(provider);
   if (!apiKey) {
-    setStatus("Ajoute d'abord ta clé API Anthropic dans les paramètres (⚙️).", true);
+    setStatus("Ajoute d'abord ta clé API dans les paramètres (⚙️).", true);
     openSettings();
     return;
   }
@@ -430,6 +549,7 @@ form.addEventListener("submit", async (e) => {
     setStatus("Analyse et vérification des faits en cours (recherche web)… cela peut prendre une minute.");
 
     const { analysis, truncated } = await analyzeTranscript({
+      provider,
       apiKey,
       title: transcriptData.meta.title,
       author: transcriptData.meta.author,
@@ -451,8 +571,8 @@ exportPdfBtn.addEventListener("click", () => downloadFile("/api/export/pdf", "do
 exportTextBtn.addEventListener("click", () => downloadFile("/api/export/text", "dossier.txt"));
 
 // ---------- Réception d'un lien partagé depuis une autre app (WhatsApp, YouTube...) ----------
-// Fonctionne quand l'app est installée sur Android via Chrome (Web Share Target).
-// Non pris en charge sur iOS/Safari : voir README.
+// Fonctionne quand l'app est installée sur Android via Chrome (Web Share Target),
+// ou sur iOS via le Raccourci décrit dans le README.
 
 function extractYouTubeUrlFromText(text) {
   if (!text) return null;

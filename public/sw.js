@@ -1,4 +1,4 @@
-const CACHE_NAME = "premier-dossier-v3";
+const CACHE_NAME = "premier-dossier-v4";
 const APP_SHELL = [
   "/",
   "/index.html",

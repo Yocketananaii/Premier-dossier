@@ -245,7 +245,8 @@ footer {
   font-size: 0.9rem;
   color: var(--muted);
 }
-.modal-content input {
+.modal-content input,
+.modal-content select {
   width: 100%;
   padding: 0.7rem 0.9rem;
   border-radius: 8px;

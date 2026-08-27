@@ -35,6 +35,8 @@ const I18N = {
       noSummary: "Non disponible.",
       defaultLimits:
         "Cette analyse a été générée automatiquement par une IA, à l'aide de recherches web en temps réel pour vérifier les affirmations factuelles.",
+      noSearchFallbackNote:
+        "Vérification web non disponible avec cette clé (quota atteint ou fonctionnalité non activée) : cette analyse se base uniquement sur les connaissances générales du modèle, sans recherche en temps réel. Ces connaissances datent d'environ début 2025 (avec des mises à jour partielles pour certains domaines techniques jusqu'à début 2026) — les faits plus récents peuvent ne pas être connus du modèle.",
       verdicts: {
         true: "Vrai",
         false: "Faux",
@@ -69,6 +71,8 @@ const I18N = {
       noSummary: "Not available.",
       defaultLimits:
         "This analysis was generated automatically by an AI, using real-time web searches to verify factual claims.",
+      noSearchFallbackNote:
+        "Web verification was not available with this key (quota reached or feature not enabled): this analysis relies only on the model's general knowledge, without real-time search. That knowledge dates from around early 2025 (with partial updates for some technical domains up to early 2026) — more recent facts may not be known to the model.",
       verdicts: {
         true: "True",
         false: "False",
@@ -103,6 +107,8 @@ const I18N = {
       noSummary: "No disponible.",
       defaultLimits:
         "Este análisis fue generado automáticamente por una IA, utilizando búsquedas web en tiempo real para verificar las afirmaciones factuales.",
+      noSearchFallbackNote:
+        "La verificación web no estaba disponible con esta clave (cuota alcanzada o función no habilitada): este análisis se basa únicamente en el conocimiento general del modelo, sin búsqueda en tiempo real. Ese conocimiento data de principios de 2025 aproximadamente (con actualizaciones parciales en algunos ámbitos técnicos hasta principios de 2026) — es posible que el modelo no conozca los hechos más recientes.",
       verdicts: {
         true: "Verdadero",
         false: "Falso",
@@ -137,6 +143,8 @@ const I18N = {
       noSummary: "Nicht verfügbar.",
       defaultLimits:
         "Diese Analyse wurde automatisch von einer KI erstellt, wobei Web-Suchen in Echtzeit zur Überprüfung der Fakten verwendet wurden.",
+      noSearchFallbackNote:
+        "Web-Überprüfung mit diesem Schlüssel nicht verfügbar (Kontingent erreicht oder Funktion nicht aktiviert): Diese Analyse basiert ausschließlich auf dem allgemeinen Wissen des Modells, ohne Echtzeitsuche. Dieses Wissen stammt etwa von Anfang 2025 (mit teilweisen Aktualisierungen für einige technische Bereiche bis Anfang 2026) — neuere Fakten sind dem Modell möglicherweise nicht bekannt.",
       verdicts: {
         true: "Wahr",
         false: "Falsch",
@@ -171,6 +179,8 @@ const I18N = {
       noSummary: "Non disponibile.",
       defaultLimits:
         "Questa analisi è stata generata automaticamente da un'IA, utilizzando ricerche web in tempo reale per verificare le affermazioni fattuali.",
+      noSearchFallbackNote:
+        "Verifica web non disponibile con questa chiave (quota raggiunta o funzione non abilitata): questa analisi si basa solo sulla conoscenza generale del modello, senza ricerca in tempo reale. Questa conoscenza risale a circa inizio 2025 (con aggiornamenti parziali per alcuni ambiti tecnici fino a inizio 2026) — i fatti più recenti potrebbero non essere noti al modello.",
       verdicts: {
         true: "Vero",
         false: "Falso",
@@ -205,6 +215,8 @@ const I18N = {
       noSummary: "Não disponível.",
       defaultLimits:
         "Esta análise foi gerada automaticamente por uma IA, utilizando pesquisas na web em tempo real para verificar as afirmações factuais.",
+      noSearchFallbackNote:
+        "Verificação na web não disponível com esta chave (quota atingida ou funcionalidade não ativada): esta análise baseia-se apenas no conhecimento geral do modelo, sem pesquisa em tempo real. Esse conhecimento é de cerca do início de 2025 (com atualizações parciais em alguns domínios técnicos até início de 2026) — factos mais recentes podem não ser conhecidos pelo modelo.",
       verdicts: {
         true: "Verdadeiro",
         false: "Falso",

@@ -6,14 +6,25 @@ Application web (installable comme app sur **Android et iOS**) qui extrait la tr
 
 1. Vous collez l'URL d'une vidéo YouTube (ou vous la partagez directement depuis une autre app — voir plus bas).
 2. Le **serveur** (Node/Express) récupère les sous-titres (automatiques ou manuels) de la vidéo, ainsi que son titre et sa chaîne — aucune clé API n'est nécessaire pour cette étape.
-3. Le **navigateur** (votre téléphone ou ordinateur) envoie ensuite la transcription **directement à l'API Claude** (Anthropic), avec **votre propre clé API**, en utilisant l'outil `web_search` pour vérifier chaque affirmation factuelle repérée dans la vidéo par de vraies recherches web. Le serveur de l'application ne voit jamais votre clé ni le contenu de l'analyse.
-4. Claude produit :
+3. Le **navigateur** (votre téléphone ou ordinateur) envoie ensuite la transcription **directement au fournisseur IA choisi** (Google Gemini ou Anthropic Claude, au choix dans les Paramètres), avec **votre propre clé API**, en utilisant la recherche web intégrée du fournisseur pour vérifier chaque affirmation factuelle repérée dans la vidéo. Le serveur de l'application ne voit jamais votre clé ni le contenu de l'analyse.
+4. Le modèle choisi produit :
    - un résumé et les points clés ;
    - le contenu réorganisé par thème ;
    - une liste des affirmations factuelles avec un verdict (vrai / faux / partiellement vrai / invérifiable / opinion), une explication et les **sources web** consultées ;
    - un commentaire global sur la fiabilité et la véracité de la vidéo ;
    - un rappel honnête des limites de l'analyse.
 5. Vous pouvez télécharger le dossier en PDF ou en `.txt` (sources incluses) — cette étape repasse par le serveur (génération de fichier), sans clé API requise.
+
+### Choisir son fournisseur IA (Gemini gratuit, ou Claude payant)
+
+Dans les **Paramètres (⚙️)**, un menu **« Fournisseur IA »** permet de choisir entre :
+
+- **Google Gemini** (recommandé, par défaut) — clé API **100 % gratuite, sans carte bancaire**, obtenue en 30 secondes sur [aistudio.google.com](https://aistudio.google.com/apikey) avec un simple compte Google. Utilise le modèle Gemini 3.6 Flash avec recherche Google intégrée (gratuite jusqu'à 5 000 recherches/mois — largement suffisant pour un usage familial).
+- **Anthropic Claude** — qualité d'analyse généralement supérieure, mais nécessite une clé payante (facturée à l'usage, carte bancaire requise). Utile si vous ou vos proches avez déjà une clé Anthropic.
+
+C'est ce choix Gemini qui rend l'app accessible à tous sans barrière financière : ChatGPT (OpenAI) et Perplexity n'offrent aucune clé API gratuite (carte bancaire exigée dès le premier appel), ils ne sont donc pas proposés ici.
+
+**Recherche web indisponible (rare)** : si le quota gratuit de recherche Gemini est dépassé (au-delà de 5 000/mois) ou indisponible pour une autre raison, l'app se rabat automatiquement sur une analyse sans recherche en temps réel, et l'indique clairement dans la section « Limites de cette analyse » du dossier, en précisant la date jusqu'à laquelle les connaissances du modèle sont à jour (début 2025 pour la plupart des sujets, mi-2026 pour certains domaines techniques).
 
 ### Langue du dossier
 
@@ -43,7 +54,7 @@ Le raccourci apparaît désormais dans le menu de partage de Safari, WhatsApp, Y
 
 ### Pourquoi une clé API par utilisateur ?
 
-Un compte Claude.ai (l'abonnement de chat Free/Pro/Max) **n'est pas la même chose** qu'une clé API : l'API est facturée séparément, à l'usage, via https://console.anthropic.com/settings/keys. Chaque personne qui utilise cette application doit y créer sa propre clé (quelques dollars de crédit suffisent pour de nombreuses analyses) et la coller dans les **Paramètres (⚙️)** de l'app. Elle est stockée uniquement dans le navigateur de l'appareil (`localStorage`) et n'est jamais envoyée au serveur de l'application — seulement à l'API d'Anthropic, en HTTPS direct depuis le téléphone/ordinateur.
+Un compte de chat grand public (claude.ai, gemini.google.com...) **n'est pas la même chose** qu'une clé API : l'API est un accès séparé, pensé pour les développeurs. Avec Gemini, cette clé reste gratuite (voir ci-dessus) ; avec Claude, elle est facturée à l'usage via https://console.anthropic.com/settings/keys. Chaque personne qui utilise cette application crée sa propre clé et la colle dans les **Paramètres (⚙️)** de l'app. Elle est stockée uniquement dans le navigateur de l'appareil (`localStorage`) et n'est jamais envoyée au serveur de l'application — seulement au fournisseur choisi, en HTTPS direct depuis le téléphone/ordinateur.
 
 ⚠️ **Important** : même avec une recherche web réelle, le fact-checking automatique peut se tromper (sources contradictoires, contenu difficile à trouver en ligne, nuances mal interprétées). Considérez-le comme une aide sérieuse à la vérification, pas comme une source définitive — les sources citées vous permettent de recouper vous-même les points importants.
 
@@ -70,7 +81,7 @@ L'application est une **Progressive Web App** : pas besoin de Play Store ni de f
 1. Ouvrez l'URL de l'application (celle donnée par Render, ou la vôtre) dans **Chrome sur Android**.
 2. Ouvrez le menu ⋮ de Chrome → **« Installer l'application »** (ou « Ajouter à l'écran d'accueil »).
 3. Une icône « Extracto » apparaît sur l'écran d'accueil et lance l'app en plein écran, comme une app native.
-4. Ouvrez les **Paramètres (⚙️)** dans l'app et collez votre clé API Anthropic (une seule fois — elle reste sur l'appareil).
+4. Ouvrez les **Paramètres (⚙️)** dans l'app, choisissez votre fournisseur (Gemini par défaut) et collez votre clé API (une seule fois — elle reste sur l'appareil).
 
 L'app fonctionne aussi installée sur ordinateur (Chrome/Edge : icône d'installation dans la barre d'adresse).
 
@@ -82,14 +93,14 @@ Même application, même serveur — pas de build ni de fichier séparé pour iO
 2. Touchez le bouton **Partager** (le carré avec la flèche vers le haut), en bas de l'écran.
 3. Choisissez **« Sur l'écran d'accueil »**, puis **« Ajouter »**.
 4. Une icône « Extracto » apparaît sur l'écran d'accueil et lance l'app en plein écran, sans barre d'adresse.
-5. Ouvrez les **Paramètres (⚙️)** dans l'app et collez votre clé API Anthropic.
+5. Ouvrez les **Paramètres (⚙️)** dans l'app, choisissez votre fournisseur (Gemini par défaut) et collez votre clé API.
 
 ⚠️ Particularité iOS : Safari peut occasionnellement vider le stockage local d'une app peu utilisée (au bout de plusieurs semaines d'inactivité), ce qui effacerait la clé API enregistrée. Si l'app la redemande après une longue pause, c'est normal — il suffit de la recoller.
 
 ## Prérequis
 
 - Node.js 18 ou supérieur (pour faire tourner le serveur).
-- Une clé API Anthropic par utilisateur : https://console.anthropic.com/settings/keys
+- Une clé API par utilisateur : gratuite avec Google Gemini ([aistudio.google.com/apikey](https://aistudio.google.com/apikey)), ou payante avec Anthropic Claude ([console.anthropic.com](https://console.anthropic.com/settings/keys)).
 
 ## Installation (développement local)
 
@@ -103,14 +114,14 @@ npm install
 npm start
 ```
 
-L'application est accessible sur http://localhost:3000. Ouvrez les Paramètres (⚙️) pour y coller votre clé API Anthropic avant de lancer une analyse.
+L'application est accessible sur http://localhost:3000. Ouvrez les Paramètres (⚙️) pour choisir un fournisseur et y coller votre clé API avant de lancer une analyse.
 
 ## Limites connues
 
 - La vidéo doit avoir des sous-titres disponibles sur YouTube (automatiques ou ajoutés manuellement) ; sans sous-titres, la transcription ne peut pas être récupérée.
 - Les vidéos très longues (plusieurs heures) peuvent voir leur transcription tronquée avant l'analyse afin de rester dans la limite de contexte du modèle ; un avertissement est alors affiché.
 - Les vidéos privées, en accès restreint ou supprimées ne peuvent pas être traitées.
-- L'appel à Claude se fait directement depuis le navigateur : sur un appareil partagé ou public, pensez à supprimer votre clé API dans les Paramètres après usage.
+- L'appel au fournisseur IA se fait directement depuis le navigateur : sur un appareil partagé ou public, pensez à supprimer votre clé API dans les Paramètres après usage.
 - Sur iOS, l'installation en écran d'accueil plein écran n'est possible que depuis Safari (pas depuis Chrome/Firefox iOS), et le partage direct depuis WhatsApp nécessite de créer un Raccourci une fois (voir ci-dessus) — sans lui, il faut copier-coller le lien manuellement. Le stockage de la clé API peut être effacé par Safari après une longue période d'inactivité (voir ci-dessus).
 - Sur le plan gratuit Render, le serveur peut mettre jusqu'à une minute à répondre après une période d'inactivité.
 
@@ -124,7 +135,7 @@ src/text.js              génération de l'export texte (multilingue)
 src/i18n.js              dictionnaire de traduction des libellés (PDF/texte), copié tel quel en public/i18n.js pour le navigateur
 scripts/generate-icons.js génère les icônes PNG de la PWA (public/icons/) — logo "entonnoir" représentant l'extraction
 public/                  interface web (PWA) : HTML/CSS/JS, manifest (avec share_target), service worker
-public/script.js         logique client : gestion de la clé API et de la langue, réception des liens partagés, appel direct à l'API Claude (avec web_search), rendu du résultat
+public/script.js         logique client : gestion du fournisseur/clé API et de la langue, réception des liens partagés, appel direct à Gemini ou Claude (avec recherche web), rendu du résultat
 ```
 
 **Note pour la maintenance** : `src/i18n.js` et `public/i18n.js` doivent rester identiques (le second est chargé tel quel par le navigateur, le premier via `require()` côté serveur). Toute modification des traductions doit être répercutée dans les deux fichiers.
